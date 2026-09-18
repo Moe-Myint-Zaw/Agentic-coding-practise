@@ -1,7 +1,7 @@
 import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
-import { api } from '../lib/api';
+import { api, resolveMediaUrl } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 import { useUserPosts } from '../hooks/usePosts';
 import { Button } from '../components/ui/button';
@@ -21,7 +21,7 @@ export const Profile: React.FC = () => {
     enabled: !!profileId,
   });
 
-  const user = userResponse?.data;
+  const user = userResponse;
 
   const { data: postsData } = useUserPosts(profileId!, { page: 1, limit: 20 });
 
@@ -45,7 +45,7 @@ export const Profile: React.FC = () => {
               <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center">
                 {user.profileImage ? (
                   <img
-                    src={user.profileImage}
+                    src={resolveMediaUrl(user.profileImage)}
                     alt={user.displayName || user.username}
                     className="w-full h-full rounded-full object-cover"
                   />
@@ -124,7 +124,7 @@ export const Profile: React.FC = () => {
                     {post.images.map((image: string, index: number) => (
                       <img
                         key={index}
-                        src={image}
+                        src={resolveMediaUrl(image)}
                         alt={`Post image ${index + 1}`}
                         className="rounded-md w-full h-48 object-cover"
                       />

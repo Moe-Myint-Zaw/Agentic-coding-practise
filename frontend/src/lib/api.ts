@@ -12,6 +12,11 @@ export const queryClient = new QueryClient({
 });
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1';
+export const API_ORIGIN = API_URL.replace(/\/api\/v1\/?$/, '');
+
+export const resolveMediaUrl = (url: string): string => (
+  url.startsWith('http') ? url : `${API_ORIGIN}${url}`
+);
 
 // Helper function to get auth token
 const getAuthToken = (): string | null => {
@@ -170,7 +175,8 @@ export const api = {
 
   // User endpoints
   async getUser(id: string): Promise<User> {
-    return authenticatedFetch(`/users/${id}`);
+    const response = await authenticatedFetch(`/users/${id}`);
+    return response.data;
   },
 
   async updateUser(id: string, data: { displayName?: string; bio?: string; profileImage?: string }): Promise<User> {

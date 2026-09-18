@@ -1,4 +1,5 @@
 import { NextFunction, Request, Response } from 'express';
+import { MulterError } from 'multer';
 
 export class ApiError extends Error {
   statusCode: number;
@@ -20,6 +21,16 @@ export const errorMiddleware = (err: Error, req: Request, res: Response, next: N
 
   if (res.headersSent) {
     return next(err);
+  }
+
+  if (err instanceof MulterError) {
+    const message = err.code === 'LIMIT_FILE_SIZE'
+      ? 'Image size must be 5MB or less'
+      : 'Image upload failed';
+    return res.status(400).json({
+      success: false,
+      error: { message, code: 'UPLOAD_FAILED' },
+    });
   }
 
   if (err instanceof ApiError) {

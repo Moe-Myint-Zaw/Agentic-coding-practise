@@ -1,32 +1,66 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { usePosts, useCreatePost, useDeletePost } from '../hooks/usePosts';
 import { useTogglePostLike } from '../hooks/useLikes';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader } from '../components/ui/card';
 import { useAuth } from '../contexts/AuthContext';
-import { Heart, MessageCircle, Share2, MoreHorizontal, Trash2 } from 'lucide-react';
+import { Heart, MessageCircle, Share2, MoreHorizontal, Trash2, ImagePlus, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { api, resolveMediaUrl } from '../lib/api';
 
 export const Feed: React.FC = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
   const [newPostContent, setNewPostContent] = useState('');
+  const [selectedImages, setSelectedImages] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [uploadError, setUploadError] = useState('');
+  const imageInputRef = useRef<HTMLInputElement>(null);
 
   const { data: postsData, isLoading, error } = usePosts({ page: 1, limit: 20 });
   const createPost = useCreatePost();
   const toggleLike = useTogglePostLike();
   const deletePost = useDeletePost();
 
+  useEffect(() => {
+    const previews = selectedImages.map((file) => URL.createObjectURL(file));
+    setImagePreviews(previews);
+    return () => previews.forEach((preview) => URL.revokeObjectURL(preview));
+  }, [selectedImages]);
+
   const handleCreatePost = async () => {
-    if (!newPostContent.trim()) return;
+    if (!newPostContent.trim() && selectedImages.length === 0) return;
 
     try {
-      await createPost.mutateAsync({ content: newPostContent });
+      setUploadError('');
+      const uploadedImages = await Promise.all(selectedImages.map((file) => api.uploadImage(file)));
+      await createPost.mutateAsync({
+        content: newPostContent,
+        images: uploadedImages.map(({ url }) => url),
+      });
       setNewPostContent('');
+      setSelectedImages([]);
     } catch (error) {
-      console.error('Failed to create post:', error);
+      setUploadError(error instanceof Error ? error.message : t('errors.uploadFailed'));
     }
+  };
+
+  const handleImageSelection = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || []);
+    if (files.length === 0) return;
+    if (selectedImages.length + files.length > 5) {
+      setUploadError(t('post.maxImages'));
+      return;
+    }
+    const invalidFile = files.find((file) => !['image/jpeg', 'image/png'].includes(file.type) || file.size > 5 * 1024 * 1024);
+    if (invalidFile) {
+      setUploadError(invalidFile.size > 5 * 1024 * 1024 ? t('post.maxImageSize') : t('errors.uploadFailed'));
+      return;
+    }
+    setUploadError('');
+    setSelectedImages((current) => [...current, ...files]);
+    event.target.value = '';
   };
 
   const handleLike = async (postId: string) => {
@@ -70,17 +104,37 @@ export const Feed: React.FC = () => {
               className="w-full min-h-[100px] p-3 border border-input bg-background text-foreground placeholder:text-muted-foreground rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-ring"
               maxLength={500}
             />
+            {selectedImages.length > 0 && (
+              <div className="grid grid-cols-5 gap-2 mt-3">
+                {selectedImages.map((file, index) => (
+                  <div className="relative aspect-square" key={`${file.name}-${file.lastModified}`}>
+                    <img src={imagePreviews[index]} alt={file.name} className="w-full h-full rounded-md object-cover" />
+                    <button
+                      type="button"
+                      aria-label={`Remove ${file.name}`}
+                      className="absolute right-1 top-1 rounded-full bg-background/90 p-1"
+                      onClick={() => setSelectedImages((current) => current.filter((_, imageIndex) => imageIndex !== index))}
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            {uploadError && <p className="mt-2 text-sm text-destructive">{uploadError}</p>}
             <div className="flex justify-between items-center mt-4">
               <span className="text-sm text-muted-foreground">
                 {newPostContent.length}/500
               </span>
               <div className="flex gap-2">
-                <Button variant="outline" size="sm" disabled>
+                <input ref={imageInputRef} type="file" accept="image/jpeg,image/png" multiple className="hidden" onChange={handleImageSelection} />
+                <Button type="button" variant="outline" size="sm" onClick={() => imageInputRef.current?.click()} disabled={selectedImages.length >= 5 || createPost.isPending}>
+                  <ImagePlus className="h-4 w-4 mr-2" />
                   {t('post.addImages')}
                 </Button>
                 <Button
                   onClick={handleCreatePost}
-                  disabled={!newPostContent.trim() || createPost.isPending}
+                  disabled={(!newPostContent.trim() && selectedImages.length === 0) || createPost.isPending}
                 >
                   {createPost.isPending ? t('common.loading') : t('post.postButton')}
                 </Button>
@@ -108,7 +162,7 @@ export const Feed: React.FC = () => {
                       <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
                         {post.author.profileImage ? (
                           <img
-                            src={post.author.profileImage}
+                            src={resolveMediaUrl(post.author.profileImage)}
                             alt={post.author.displayName || post.author.username}
                             className="w-full h-full rounded-full object-cover"
                           />
@@ -154,7 +208,7 @@ export const Feed: React.FC = () => {
                     {post.images.map((image: string, index: number) => (
                       <img
                         key={index}
-                        src={image}
+                            src={resolveMediaUrl(image)}
                         alt={`Post image ${index + 1}`}
                         className="rounded-md w-full h-48 object-cover"
                       />

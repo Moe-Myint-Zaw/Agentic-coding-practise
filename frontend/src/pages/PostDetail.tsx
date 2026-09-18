@@ -11,6 +11,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { Heart, MessageCircle, Share2, MoreHorizontal, Trash2, Send } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import type { Comment } from '../types';
+import { resolveMediaUrl } from '../lib/api';
 
 export const PostDetail: React.FC = () => {
   const { t } = useTranslation();
@@ -87,7 +88,7 @@ export const PostDetail: React.FC = () => {
                   <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
                     {post.author.profileImage ? (
                       <img
-                        src={post.author.profileImage}
+                        src={resolveMediaUrl(post.author.profileImage)}
                         alt={post.author.displayName || post.author.username}
                         className="w-full h-full rounded-full object-cover"
                       />
@@ -130,7 +131,7 @@ export const PostDetail: React.FC = () => {
               {post.images.map((image: string, index: number) => (
                 <img
                   key={index}
-                  src={image}
+                  src={resolveMediaUrl(image)}
                   alt={`Post image ${index + 1}`}
                   className="rounded-md w-full h-48 object-cover"
                 />
@@ -214,7 +215,7 @@ export const PostDetail: React.FC = () => {
                         <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
                           {comment.author.profileImage ? (
                             <img
-                              src={comment.author.profileImage}
+                              src={resolveMediaUrl(comment.author.profileImage)}
                               alt={comment.author.displayName || comment.author.username}
                               className="w-full h-full rounded-full object-cover"
                             />

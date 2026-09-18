@@ -5,6 +5,7 @@ import apiRoutes from './routes';
 import { errorMiddleware } from './middleware/error.middleware';
 import env from './config/env';
 import { getPublicCorsOptions } from './config/cors';
+import path from 'path';
 
 dotenv.config();
 
@@ -12,6 +13,12 @@ const app = express();
 
 app.use(cors(getPublicCorsOptions()));
 app.use(express.json({ limit: '1mb' }));
+app.use('/uploads', express.static(path.resolve(process.cwd(), 'uploads'), {
+  setHeaders: (res) => {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+  },
+}));
 
 app.get('/health', (_req, res) => {
   res.json({ success: true, data: { status: 'ok' } });

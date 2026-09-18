@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import * as ImagePicker from 'expo-image-picker';
 import { Link, router } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { useState } from 'react';
@@ -8,7 +9,6 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
-  Image,
   Platform,
   Pressable,
   RefreshControl,
@@ -18,10 +18,13 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { api, ApiError } from '@/lib/api-client';
+import { RemoteImage } from '@/components/remote-image';
+import { api, ApiError, resolveMediaUrl } from '@/lib/api-client';
 import { useAuth } from '@/contexts/auth-context';
 import { useLocale } from '@/contexts/locale-context';
 import type { Post } from '@/types';
+
+type SelectedImage = { uri: string; name: string; type: string; fileSize?: number };
 
 function confirmDestructiveAction(
   title: string,
@@ -48,13 +51,23 @@ export default function FeedScreen() {
   const styles = createStyles(colors);
   const client = useQueryClient();
   const [content, setContent] = useState('');
+  const [selectedImages, setSelectedImages] = useState<SelectedImage[]>([]);
+  const [uploadError, setUploadError] = useState('');
 
   const feed = useQuery({ queryKey: ['posts'], queryFn: () => api.posts() });
   const create = useMutation({
-    mutationFn: () => api.createPost(content.trim()),
+    mutationFn: async () => {
+      const uploadedImages = await Promise.all(selectedImages.map((image) => api.uploadImage(image)));
+      return api.createPost(content.trim(), uploadedImages.map((image) => image.url));
+    },
     onSuccess: () => {
       setContent('');
+      setSelectedImages([]);
+      setUploadError('');
       client.invalidateQueries({ queryKey: ['posts'] });
+    },
+    onError: (error) => {
+      setUploadError(error instanceof Error ? error.message : t('networkError'));
     },
   });
   const like = useMutation({
@@ -83,6 +96,36 @@ export default function FeedScreen() {
     );
   };
 
+  const pickImages = async () => {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      Alert.alert(t('addImages'), t('networkError'));
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsMultipleSelection: true,
+      selectionLimit: 5 - selectedImages.length,
+      quality: 0.8,
+    });
+    if (result.canceled) return;
+
+    const images = result.assets.map((asset, index) => ({
+      uri: asset.uri,
+      name: asset.fileName || `post-image-${Date.now()}-${index}.jpg`,
+      type: asset.mimeType || 'image/jpeg',
+      fileSize: asset.fileSize,
+    }));
+    const invalidImage = images.find((image) => !['image/jpeg', 'image/png'].includes(image.type) || (image.fileSize ?? 0) > 5 * 1024 * 1024);
+    if (invalidImage) {
+      setUploadError((invalidImage.fileSize ?? 0) > 5 * 1024 * 1024 ? t('maxImageSize') : t('uploadFailed'));
+      return;
+    }
+    setUploadError('');
+    setSelectedImages((current) => [...current, ...images].slice(0, 5));
+  };
+
   return (
     <View style={styles.page}>
       <View style={styles.header}>
@@ -100,9 +143,39 @@ export default function FeedScreen() {
           placeholderTextColor={colors.mutedText}
           style={styles.composeInput}
         />
+        {selectedImages.length > 0 ? (
+          <View style={styles.selectedImages}>
+            {selectedImages.map((image, index) => (
+              <View key={`${image.uri}-${index}`} style={styles.selectedImageContainer}>
+                <RemoteImage uri={image.uri} style={styles.selectedImage} />
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`${t('delete')} ${image.name}`}
+                  hitSlop={8}
+                  style={styles.removeImage}
+                  onPress={() => setSelectedImages((current) => current.filter((_, imageIndex) => imageIndex !== index))}
+                >
+                  <SymbolView name={{ ios: 'xmark', android: 'close', web: 'close' }} size={13} tintColor="#fff" />
+                </Pressable>
+              </View>
+            ))}
+          </View>
+        ) : null}
+        {uploadError ? <Text style={styles.uploadError}>{uploadError}</Text> : null}
+        <View style={styles.composerActions}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t('addImages')}
+            disabled={selectedImages.length >= 5 || create.isPending}
+            style={styles.imageButton}
+            onPress={pickImages}
+          >
+            <SymbolView name={{ ios: 'photo.on.rectangle', android: 'add_photo_alternate', web: 'add_photo_alternate' }} size={18} tintColor={colors.tint} />
+            <Text style={styles.imageButtonText}>{t('addImages')}</Text>
+          </Pressable>
         <Pressable
           accessibilityLabel={t('post')}
-          disabled={!content.trim() || create.isPending}
+          disabled={(!content.trim() && selectedImages.length === 0) || create.isPending}
           style={styles.postButton}
           onPress={() => create.mutate()}
         >
@@ -111,6 +184,7 @@ export default function FeedScreen() {
             <Text style={styles.postButtonText}>{t('post')}</Text>
           </View>
         </Pressable>
+        </View>
       </View>
 
       {feed.isLoading ? (
@@ -181,7 +255,7 @@ function PostCard({
           onPress={openPost}
         >
           {post.author.profileImage ? (
-            <Image source={{ uri: post.author.profileImage }} style={styles.avatarImage} />
+            <RemoteImage uri={resolveMediaUrl(post.author.profileImage)} style={styles.avatarImage} />
           ) : (
             <View style={styles.avatar}>
               <Text style={styles.avatarText}>{authorName.slice(0, 1).toUpperCase()}</Text>
@@ -229,9 +303,9 @@ function PostCard({
         {post.images.length > 0 ? (
           <View style={styles.mediaGrid}>
             {post.images.slice(0, 4).map((image, index) => (
-              <Image
+              <RemoteImage
                 key={`${post.id}-${index}`}
-                source={{ uri: image }}
+                uri={resolveMediaUrl(image)}
                 accessibilityLabel={`${t('post')} ${index + 1}`}
                 style={post.images.length === 1 ? styles.singleImage : styles.mediaImage}
               />
@@ -304,7 +378,15 @@ function createStyles(colors: ThemeColors) { return StyleSheet.create({
     borderBottomWidth: 1,
     padding: 14,
   },
+  composerActions: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 },
   composeInput: { color: colors.text, minHeight: 48, padding: 8, textAlignVertical: 'top' },
+  imageButton: { alignItems: 'center', flexDirection: 'row', gap: 6, minHeight: 44, paddingHorizontal: 4 },
+  imageButtonText: { color: colors.tint, fontWeight: '600' },
+  selectedImages: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
+  selectedImageContainer: { height: 64, position: 'relative', width: 64 },
+  selectedImage: { borderCurve: 'continuous', borderRadius: 7, height: '100%', overflow: 'hidden', width: '100%' },
+  removeImage: { alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.65)', borderRadius: 12, height: 24, justifyContent: 'center', position: 'absolute', right: -6, top: -6, width: 24 },
+  uploadError: { color: colors.danger, fontSize: 13, marginTop: 7 },
   postButton: {
     alignSelf: 'flex-end',
     backgroundColor: colors.tint,
@@ -360,8 +442,8 @@ function createStyles(colors: ThemeColors) { return StyleSheet.create({
   date: { color: colors.mutedText, fontSize: 12, marginTop: 2 },
   content: { color: colors.text, fontSize: 16, lineHeight: 23, marginVertical: 12 },
   mediaGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 12 },
-  mediaImage: { aspectRatio: 1, borderRadius: 8, width: '48%' },
-  singleImage: { aspectRatio: 16 / 10, borderRadius: 8, width: '100%' },
+  mediaImage: { aspectRatio: 1, backgroundColor: colors.border, borderCurve: 'continuous', borderRadius: 8, overflow: 'hidden', width: '48%' },
+  singleImage: { aspectRatio: 16 / 10, backgroundColor: colors.border, borderCurve: 'continuous', borderRadius: 8, overflow: 'hidden', width: '100%' },
   actions: {
     borderTopColor: colors.border,
     borderTopWidth: 1,
