@@ -31,6 +31,8 @@ A modern, full-stack social media application built with a unified technology st
 - Express Validator for input validation
 - CORS enabled
 - Rate limiting on authentication endpoints
+- Upload handling for user and post images
+- Admin endpoints for stats, user moderation, and content review
 
 **Mobile (React Native + Expo)**
 - React Native with Expo
@@ -40,6 +42,19 @@ A modern, full-stack social media application built with a unified technology st
 - React Hook Form for form management
 - English/Myanmar localization
 - Theme support (light/dark)
+- Secure token storage with Expo secure store
+- API client configured to use a LAN IP for physical devices and Android emulator networking
+
+## Current Implementation Status
+
+As of the current repository state, the project is already beyond a blank scaffold and includes the following implemented work:
+
+- Backend API routes for authentication, refresh, current-user lookup, posts, comments, likes, profile updates, image upload, and admin moderation are present.
+- User authentication flows include registration, login, JWT issuance, refresh token handling, and protected route enforcement.
+- Post and comment operations support listing, creation, retrieval, deletion, and like toggling.
+- User profile and admin endpoints are implemented for viewing profiles, user-specific posts, stats, moderation lists, and banning.
+- The web app and Expo mobile app are both present in the workspace and wired to the same backend API contract.
+- The remaining roadmap items are still future work and remain intentionally unchanged for the next phase.
 
 ## Project Goals
 
@@ -52,13 +67,13 @@ A modern, full-stack social media application built with a unified technology st
 
 ## Scope
 
-### MVP Scope (Phase 1)
-- User Authentication (registration, login, JWT tokens)
+### Current MVP Scope (implemented / in active use)
+- User Authentication (registration, login, JWT refresh, current-user lookup)
 - Post Management (create, view, delete posts with text and images)
-- Comments (flat comments on posts)
-- Likes & Reactions (like/unlike posts and comments)
-- User Profiles (basic profiles with bio and post history)
-- Basic Admin Moderation (view all users/content, delete any content)
+- Comments (create and delete comments on posts)
+- Likes & Reactions (toggle like/unlike posts and comments)
+- User Profiles (view profiles, update profile details, list user posts)
+- Basic Admin Moderation (stats, user list, content lists, ban actions)
 
 ### Future Phases
 - Follow System (follow/unfollow users)

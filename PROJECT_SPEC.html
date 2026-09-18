@@ -765,6 +765,8 @@
                             <li>Express Validator</li>
                             <li>CORS enabled</li>
                             <li>Rate limiting on auth</li>
+                            <li>Upload handling for images</li>
+                            <li>Admin endpoints for stats and moderation</li>
                         </ul>
                     </div>
                     <div class="tech-card mobile">
@@ -777,9 +779,14 @@
                             <li>React Hook Form for forms</li>
                             <li>English/Myanmar i18n</li>
                             <li>Theme support (light/dark)</li>
+                            <li>Secure token storage with Expo secure store</li>
+                            <li>LAN-aware API client for physical devices and Android emulator networking</li>
                         </ul>
                     </div>
                 </div>
+
+                <h3>Current Implementation Status</h3>
+                <p>The repository already includes a working backend and client setup. The implemented state covers authentication, post and comment management, likes, profile updates, uploads, and admin moderation. The remaining roadmap items below are still future work and remain intentionally unchanged for the next phase.</p>
             </section>
 
             <!-- Project Goals -->
@@ -818,14 +825,14 @@
                 <h2>📐 Scope</h2>
                 <div class="scope-container">
                     <div class="scope-box mvp">
-                        <h4>✅ MVP Scope (Phase 1)</h4>
+                        <h4>✅ Current MVP Scope</h4>
                         <ul>
-                            <li>User Authentication (registration, login, JWT tokens)</li>
+                            <li>User Authentication (registration, login, JWT refresh, current-user lookup)</li>
                             <li>Post Management (create, view, delete posts with text and images)</li>
-                            <li>Comments (flat comments on posts)</li>
-                            <li>Likes & Reactions (like/unlike posts and comments)</li>
-                            <li>User Profiles (basic profiles with bio and post history)</li>
-                            <li>Basic Admin Moderation (view all users/content, delete any content)</li>
+                            <li>Comments (create and delete comments on posts)</li>
+                            <li>Likes & Reactions (toggle like/unlike posts and comments)</li>
+                            <li>User Profiles (view profiles, update profile details, list user posts)</li>
+                            <li>Basic Admin Moderation (stats, user list, content lists, ban actions)</li>
                         </ul>
                     </div>
                     <div class="scope-box future">
