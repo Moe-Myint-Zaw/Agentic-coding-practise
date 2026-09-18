@@ -1,0 +1,378 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Link, router } from 'expo-router';
+import { SymbolView } from 'expo-symbols';
+import { useState } from 'react';
+import { useTheme } from '@/contexts/theme-context';
+import type { ThemeColors } from '@/constants/Colors';
+import {
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  Image,
+  Platform,
+  Pressable,
+  RefreshControl,
+  Share,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
+import { api, ApiError } from '@/lib/api-client';
+import { useAuth } from '@/contexts/auth-context';
+import { useLocale } from '@/contexts/locale-context';
+import type { Post } from '@/types';
+
+function confirmDestructiveAction(
+  title: string,
+  message: string,
+  confirmLabel: string,
+  cancelLabel: string,
+  onConfirm: () => void,
+) {
+  if (Platform.OS === 'web') {
+    if (window.confirm(message)) onConfirm();
+    return;
+  }
+
+  Alert.alert(title, message, [
+    { text: cancelLabel, style: 'cancel' },
+    { text: confirmLabel, style: 'destructive', onPress: onConfirm },
+  ]);
+}
+
+export default function FeedScreen() {
+  const { user } = useAuth();
+  const { t } = useLocale();
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
+  const client = useQueryClient();
+  const [content, setContent] = useState('');
+
+  const feed = useQuery({ queryKey: ['posts'], queryFn: () => api.posts() });
+  const create = useMutation({
+    mutationFn: () => api.createPost(content.trim()),
+    onSuccess: () => {
+      setContent('');
+      client.invalidateQueries({ queryKey: ['posts'] });
+    },
+  });
+  const like = useMutation({
+    mutationFn: api.togglePostLike,
+    onSuccess: () => client.invalidateQueries({ queryKey: ['posts'] }),
+  });
+  const remove = useMutation({
+    mutationFn: api.deletePost,
+    onSuccess: () => {
+      client.invalidateQueries({ queryKey: ['posts'] });
+      client.invalidateQueries({ queryKey: ['user-posts'] });
+    },
+    onError: (error) => {
+      const message = error instanceof ApiError ? error.message : t('networkError');
+      Alert.alert(t('deletePost'), message);
+    },
+  });
+
+  const confirmDelete = (postId: string) => {
+    confirmDestructiveAction(
+      t('deletePost'),
+      t('deletePostConfirm'),
+      t('delete'),
+      t('cancel'),
+      () => remove.mutate(postId),
+    );
+  };
+
+  return (
+    <View style={styles.page}>
+      <View style={styles.header}>
+        <Text style={styles.title}>{t('appName')}</Text>
+        <Text style={styles.greeting}>@{user?.username}</Text>
+      </View>
+
+      <View style={styles.composer}>
+        <TextInput
+          value={content}
+          onChangeText={setContent}
+          maxLength={500}
+          multiline
+          placeholder={t('createPost')}
+          placeholderTextColor={colors.mutedText}
+          style={styles.composeInput}
+        />
+        <Pressable
+          accessibilityLabel={t('post')}
+          disabled={!content.trim() || create.isPending}
+          style={styles.postButton}
+          onPress={() => create.mutate()}
+        >
+          <View style={styles.buttonContent}>
+            <SymbolView name={{ ios: 'square.and.pencil', android: 'edit', web: 'edit' }} size={16} tintColor="#fff" />
+            <Text style={styles.postButtonText}>{t('post')}</Text>
+          </View>
+        </Pressable>
+      </View>
+
+      {feed.isLoading ? (
+        <ActivityIndicator style={styles.center} />
+      ) : feed.isError ? (
+        <View style={styles.center}>
+          <Text>{t('networkError')}</Text>
+          <Pressable accessibilityLabel={t('retry')} onPress={() => feed.refetch()}>
+            <View style={styles.iconAction}>
+              <SymbolView name={{ ios: 'arrow.clockwise', android: 'refresh', web: 'refresh' }} size={20} tintColor="#087f5b" />
+              <Text style={styles.link}>{t('retry')}</Text>
+            </View>
+          </Pressable>
+        </View>
+      ) : (
+        <FlatList
+          data={feed.data?.items ?? []}
+          keyExtractor={(item) => item.id}
+          refreshControl={<RefreshControl refreshing={feed.isRefetching} onRefresh={() => feed.refetch()} />}
+          ListEmptyComponent={<Text style={styles.empty}>{t('emptyFeed')}</Text>}
+          renderItem={({ item }) => (
+            <PostCard
+              post={item}
+              onLike={() => like.mutate(item.id)}
+              onDelete={
+                item.author.id === user?.id
+                  ? () => confirmDelete(item.id)
+                  : undefined
+              }
+              isDeleting={remove.isPending && remove.variables === item.id}
+            />
+          )}
+        />
+      )}
+    </View>
+  );
+}
+
+function PostCard({
+  post,
+  onLike,
+  onDelete,
+  isDeleting,
+}: {
+  post: Post;
+  onLike: () => void;
+  onDelete?: () => void;
+  isDeleting?: boolean;
+}) {
+  const { t } = useLocale();
+  const { user } = useAuth();
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
+  const liked = post.likes.some((like) => like.userId === user?.id);
+  const authorName = post.author.displayName || post.author.username;
+
+  const openPost = () => {
+    router.push({ pathname: '/post/[id]', params: { id: post.id } });
+  };
+
+  return (
+    <View style={styles.card}>
+      <View style={styles.postHeader}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`${authorName} post`}
+          style={styles.authorPressable}
+          onPress={openPost}
+        >
+          {post.author.profileImage ? (
+            <Image source={{ uri: post.author.profileImage }} style={styles.avatarImage} />
+          ) : (
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>{authorName.slice(0, 1).toUpperCase()}</Text>
+            </View>
+          )}
+          <View style={styles.authorInfo}>
+            <Text style={styles.author}>{authorName}</Text>
+            <Text style={styles.date}>
+              @{post.author.username} · {new Date(post.createdAt).toLocaleDateString()}
+            </Text>
+          </View>
+        </Pressable>
+
+        <View style={styles.headerActions}>
+          {onDelete ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t('deletePost')}
+              disabled={isDeleting}
+              hitSlop={8}
+              style={styles.headerIconButton}
+              onPress={onDelete}
+            >
+              <SymbolView
+                pointerEvents="none"
+                name={{ ios: 'trash', android: 'delete', web: 'delete' }}
+                size={18}
+                tintColor="#b42318"
+              />
+            </Pressable>
+          ) : null}
+          <Pressable accessibilityLabel="More post actions" hitSlop={8} style={styles.headerIconButton} onPress={() => {}}>
+            <SymbolView
+              pointerEvents="none"
+              name={{ ios: 'ellipsis', android: 'more_vert', web: 'more_vert' }}
+              size={20}
+              tintColor="#52605a"
+            />
+          </Pressable>
+        </View>
+      </View>
+
+      <Pressable accessibilityRole="button" onPress={openPost}>
+        <Text style={styles.content}>{post.content}</Text>
+        {post.images.length > 0 ? (
+          <View style={styles.mediaGrid}>
+            {post.images.slice(0, 4).map((image, index) => (
+              <Image
+                key={`${post.id}-${index}`}
+                source={{ uri: image }}
+                accessibilityLabel={`${t('post')} ${index + 1}`}
+                style={post.images.length === 1 ? styles.singleImage : styles.mediaImage}
+              />
+            ))}
+          </View>
+        ) : null}
+      </Pressable>
+
+      <View style={styles.actions}>
+        <Pressable
+          accessibilityLabel={`${liked ? t('unlike') : t('like')} ${authorName}`}
+          hitSlop={8}
+          onPress={onLike}
+        >
+          <View style={styles.iconAction}>
+            <SymbolView
+              pointerEvents="none"
+              name={{ ios: liked ? 'heart.fill' : 'heart', android: 'favorite', web: 'favorite' }}
+              size={18}
+              tintColor={liked ? '#087f5b' : '#52605a'}
+            />
+            <Text style={liked ? styles.liked : styles.action}>{post._count.likes}</Text>
+          </View>
+        </Pressable>
+
+        <Link href={{ pathname: '/post/[id]', params: { id: post.id } }} asChild>
+          <Pressable accessibilityLabel={`${t('comments')} ${post._count.comments}`}>
+            <View style={styles.iconAction}>
+              <SymbolView
+                pointerEvents="none"
+                name={{ ios: 'bubble.left', android: 'comment', web: 'comment' }}
+                size={18}
+                tintColor="#52605a"
+              />
+              <Text style={styles.action}>{post._count.comments}</Text>
+            </View>
+          </Pressable>
+        </Link>
+
+        <Pressable accessibilityLabel="Share post" hitSlop={8} onPress={() => Share.share({ message: post.content })}>
+          <View style={styles.iconAction}>
+            <SymbolView
+              pointerEvents="none"
+              name={{ ios: 'square.and.arrow.up', android: 'share', web: 'share' }}
+              size={18}
+              tintColor="#52605a"
+            />
+          </View>
+        </Pressable>
+      </View>
+    </View>
+  );
+}
+
+function createStyles(colors: ThemeColors) { return StyleSheet.create({
+  page: { flex: 1, backgroundColor: colors.background },
+  header: {
+    paddingHorizontal: 18,
+    paddingTop: 20,
+    paddingBottom: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  title: { color: colors.tint, fontSize: 27, fontWeight: '800' },
+  greeting: { color: colors.mutedText },
+  composer: {
+    backgroundColor: colors.surface,
+    borderBottomColor: colors.border,
+    borderBottomWidth: 1,
+    padding: 14,
+  },
+  composeInput: { color: colors.text, minHeight: 48, padding: 8, textAlignVertical: 'top' },
+  postButton: {
+    alignSelf: 'flex-end',
+    backgroundColor: colors.tint,
+    borderRadius: 8,
+    paddingHorizontal: 18,
+    paddingVertical: 9,
+  },
+  buttonContent: { alignItems: 'center', flexDirection: 'row', gap: 7 },
+  postButtonText: { color: colors.surface, fontWeight: '700' },
+  card: {
+    backgroundColor: colors.surface,
+    borderBottomColor: colors.border,
+    borderBottomWidth: 1,
+    padding: 16,
+  },
+  postHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  authorPressable: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flex: 1,
+    gap: 10,
+    minWidth: 0,
+  },
+  avatar: {
+    alignItems: 'center',
+    backgroundColor: colors.accentSoft,
+    borderRadius: 20,
+    height: 40,
+    justifyContent: 'center',
+    width: 40,
+  },
+  avatarImage: { borderRadius: 20, height: 40, width: 40 },
+  avatarText: { color: colors.tint, fontSize: 17, fontWeight: '800' },
+  authorInfo: { flex: 1, minWidth: 0 },
+  headerActions: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 4,
+    marginLeft: 8,
+    zIndex: 1,
+  },
+  headerIconButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 44,
+    backgroundColor: 'transparent',
+  },
+  author: { color: colors.text, fontSize: 16, fontWeight: '700' },
+  date: { color: colors.mutedText, fontSize: 12, marginTop: 2 },
+  content: { color: colors.text, fontSize: 16, lineHeight: 23, marginVertical: 12 },
+  mediaGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 12 },
+  mediaImage: { aspectRatio: 1, borderRadius: 8, width: '48%' },
+  singleImage: { aspectRatio: 16 / 10, borderRadius: 8, width: '100%' },
+  actions: {
+    borderTopColor: colors.border,
+    borderTopWidth: 1,
+    flexDirection: 'row',
+    gap: 28,
+    paddingTop: 12,
+  },
+  iconAction: { alignItems: 'center', flexDirection: 'row', gap: 6, minHeight: 28 },
+  action: { color: colors.mutedText },
+  liked: { color: colors.tint, fontWeight: '700' },
+  center: { alignItems: 'center', flex: 1, justifyContent: 'center', gap: 12 },
+  empty: { color: colors.mutedText, padding: 32, textAlign: 'center' },
+  link: { color: colors.tint, fontWeight: '700' },
+}); }

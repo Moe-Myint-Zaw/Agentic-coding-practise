@@ -1,0 +1,21 @@
+{
+  "auth": {
+    "registerSuccess": "Registration successful",
+    "loginSuccess": "Login successful",
+    "invalidCredentials": "Invalid email or password",
+    "userExists": "User already exists",
+    "tokenExpired": "Token has expired",
+    "invalidToken": "Invalid token"
+  },
+  "validation": {
+    "emailRequired": "Email is required",
+    "emailInvalid": "Invalid email format",
+    "passwordRequired": "Password is required",
+    "passwordMin": "Password must be at least 8 characters",
+    "nameRequired": "Name is required"
+  },
+  "server": {
+    "internalError": "Internal server error",
+    "notFound": "Resource not found"
+  }
+}

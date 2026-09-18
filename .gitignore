@@ -1,0 +1,28 @@
+# OS and editor files
+.DS_Store
+Thumbs.db
+*.swp
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Dependencies and generated output
+**/node_modules/
+**/dist/
+**/build/
+**/coverage/
+**/.cache/
+**/.expo/
+**/.turbo/
+
+# Local databases and logs
+**/*.db
+**/*.db-journal
+**/uploads/*
+!**/uploads/.gitkeep
+*.log

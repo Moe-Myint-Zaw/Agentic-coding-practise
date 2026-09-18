@@ -1,0 +1,1 @@
+import en from './en.json'; import mm from './mm.json'; export type Language = 'en' | 'mm'; export const translations = { en, mm }; export function t(key: keyof typeof en, language: Language) { return translations[language][key] ?? translations.en[key]; }

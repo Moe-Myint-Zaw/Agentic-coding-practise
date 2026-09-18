@@ -1,0 +1,7 @@
+import { createContext, useContext, useEffect, useState, type PropsWithChildren } from 'react'; import { useColorScheme as useSystemColorScheme } from 'react-native';
+import Colors, { type ThemeColors } from '@/constants/Colors';
+type ThemeMode = 'light' | 'dark' | 'system';
+interface ThemeValue { colorScheme: 'light' | 'dark'; colors: ThemeColors; mode: ThemeMode; setMode: (mode: ThemeMode) => void; }
+const ThemeContext = createContext<ThemeValue | null>(null);
+export function ThemeProvider({ children }: PropsWithChildren) { const system = useSystemColorScheme() ?? 'light'; const [mode, setMode] = useState<ThemeMode>('light'); useEffect(() => { if (typeof localStorage !== 'undefined') setMode((localStorage.getItem('yaycha.theme') as ThemeMode | null) ?? 'light'); }, []); const changeMode = (next: ThemeMode) => { setMode(next); if (typeof localStorage !== 'undefined') localStorage.setItem('yaycha.theme', next); }; const colorScheme = (mode === 'system' ? system : mode) === 'dark' ? 'dark' : 'light'; return <ThemeContext.Provider value={{ colorScheme, colors: Colors[colorScheme], mode, setMode: changeMode }}>{children}</ThemeContext.Provider>; }
+export function useTheme() { const value = useContext(ThemeContext); if (!value) throw new Error('useTheme must be used within ThemeProvider'); return value; }

@@ -1,0 +1,21 @@
+{
+  "auth": {
+    "registerSuccess": "အကောင့်ဖွင့်မှု အောင်မြင်ပါသည်",
+    "loginSuccess": "ဝင်ရောက်မှု အောင်မြင်ပါသည်",
+    "invalidCredentials": "အီးမေးလ် သို့မဟုတ် စကားဝှက် မှားနေပါသည်",
+    "userExists": "အသုံးပြုသူ ရှိပြီးသားဖြစ်ပါသည်",
+    "tokenExpired": "တိုကင် သက်တမ်းကုန်ဆုံးပါပြီ",
+    "invalidToken": "တိုကင် မှားနေပါသည်"
+  },
+  "validation": {
+    "emailRequired": "အီးမေးလ် လိုအပ်ပါသည်",
+    "emailInvalid": "အီးမေးလ် ပုံစံ မှားနေပါသည်",
+    "passwordRequired": "စကားဝှက် လိုအပ်ပါသည်",
+    "passwordMin": "စကားဝှက် အနည်းဆုံး ၈ လုံး ရှိရပါမည်",
+    "nameRequired": "အမည် လိုအပ်ပါသည်"
+  },
+  "server": {
+    "internalError": "ဆာဗာ အမှား",
+    "notFound": "ရှာမတွေ့ပါ"
+  }
+}
