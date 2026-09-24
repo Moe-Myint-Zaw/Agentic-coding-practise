@@ -1,27 +1,34 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { usePosts, useCreatePost, useDeletePost } from '../hooks/usePosts';
+import { usePosts, useCreatePost, useDeletePost, useUpdatePost } from '../hooks/usePosts';
 import { useTogglePostLike } from '../hooks/useLikes';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader } from '../components/ui/card';
 import { useAuth } from '../contexts/AuthContext';
-import { Heart, MessageCircle, Share2, MoreHorizontal, Trash2, ImagePlus, X } from 'lucide-react';
+import { Heart, MessageCircle, Share2, MoreHorizontal, Trash2, Pencil, ImagePlus, X, Check } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
 import { api, resolveMediaUrl } from '../lib/api';
 
 export const Feed: React.FC = () => {
   const { t } = useTranslation();
-  const { user } = useAuth();
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const [newPostContent, setNewPostContent] = useState('');
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [uploadError, setUploadError] = useState('');
+  const [editingPostId, setEditingPostId] = useState<string | null>(null);
+  const [editingContent, setEditingContent] = useState('');
   const imageInputRef = useRef<HTMLInputElement>(null);
 
-  const { data: postsData, isLoading, error } = usePosts({ page: 1, limit: 20 });
+  const { data: postsData, isLoading, error } = usePosts(
+    { page: 1, limit: 20 },
+    !authLoading && isAuthenticated,
+  );
   const createPost = useCreatePost();
   const toggleLike = useTogglePostLike();
   const deletePost = useDeletePost();
+  const updatePost = useUpdatePost();
 
   useEffect(() => {
     const previews = selectedImages.map((file) => URL.createObjectURL(file));
@@ -80,6 +87,24 @@ export const Feed: React.FC = () => {
       console.error('Failed to delete post:', error);
     }
   };
+
+  const handleUpdatePost = async (postId: string) => {
+    if (!editingContent.trim()) return;
+    try {
+      await updatePost.mutateAsync({ id: postId, data: { content: editingContent } });
+      setEditingPostId(null);
+    } catch (error) {
+      setUploadError(error instanceof Error ? error.message : t('errors.somethingWentWrong'));
+    }
+  };
+
+  if (authLoading) {
+    return <div className="text-center py-8">{t('common.loading')}</div>;
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
 
   if (isLoading) {
     return <div className="text-center py-8">{t('common.loading')}</div>;
@@ -189,6 +214,17 @@ export const Feed: React.FC = () => {
                       <Button
                         variant="ghost"
                         size="icon"
+                        aria-label={t('post.editPost')}
+                        onClick={() => { setEditingPostId(post.id); setEditingContent(post.content); }}
+                        disabled={updatePost.isPending}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                    )}
+                    {post.authorId === user?.id && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
                         onClick={() => handleDeletePost(post.id)}
                         disabled={deletePost.isPending}
                       >
@@ -202,7 +238,15 @@ export const Feed: React.FC = () => {
                 </div>
               </CardHeader>
               <CardContent>
-                <p className="mb-4">{post.content}</p>
+                {editingPostId === post.id ? (
+                  <div className="mb-4 flex gap-2">
+                    <textarea value={editingContent} onChange={(event) => setEditingContent(event.target.value)} maxLength={500} className="min-h-[90px] flex-1 rounded-md border border-input bg-background p-3" />
+                    <div className="flex flex-col gap-2">
+                      <Button size="icon" aria-label={t('common.save')} onClick={() => handleUpdatePost(post.id)} disabled={!editingContent.trim() || updatePost.isPending}><Check className="h-4 w-4" /></Button>
+                      <Button size="icon" variant="ghost" aria-label={t('common.cancel')} onClick={() => setEditingPostId(null)}><X className="h-4 w-4" /></Button>
+                    </div>
+                  </div>
+                ) : <p className="mb-4">{post.content}</p>}
                 {post.images && post.images.length > 0 && (
                   <div className="grid grid-cols-2 gap-2 mb-4">
                     {post.images.map((image: string, index: number) => (

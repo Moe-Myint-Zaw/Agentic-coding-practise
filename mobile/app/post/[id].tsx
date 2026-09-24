@@ -1,19 +1,21 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { RemoteImage } from '@/components/remote-image';
-import { api, resolveMediaUrl } from '@/lib/api-client';
+import { api, resolveMediaUrl, updatePost } from '@/lib/api-client';
 import { useAuth } from '@/contexts/auth-context';
 import { useLocale } from '@/contexts/locale-context';
 
 export default function PostDetailScreen() {
-	const { id } = useLocalSearchParams<{ id: string }>();
+	const { id, edit: editParam } = useLocalSearchParams<{ id: string; edit?: string }>();
 	const { user } = useAuth();
 	const { t } = useLocale();
 	const client = useQueryClient();
 	const [content, setContent] = useState('');
+	const [editingContent, setEditingContent] = useState('');
+	const [isEditing, setIsEditing] = useState(editParam === '1');
 
 	const post = useQuery({ queryKey: ['post', id], queryFn: () => api.post(id), enabled: Boolean(id) });
 	const comments = useQuery({ queryKey: ['comments', id], queryFn: () => api.comments(id), enabled: Boolean(id) });
@@ -36,6 +38,20 @@ export default function PostDetailScreen() {
 			client.invalidateQueries({ queryKey: ['post', id] });
 		},
 	});
+	const edit = useMutation({
+		mutationFn: () => updatePost(id, editingContent.trim()),
+		onSuccess: () => {
+			setIsEditing(false);
+			client.invalidateQueries({ queryKey: ['post', id] });
+			client.invalidateQueries({ queryKey: ['posts'] });
+		},
+	});
+
+	useEffect(() => {
+		if (isEditing && post.data && !editingContent) {
+			setEditingContent(post.data.content);
+		}
+	}, [editingContent, isEditing, post.data]);
 
 	const confirmDelete = (commentId: string) => {
 		Alert.alert(t('deleteComment'), t('deleteCommentConfirm'), [
@@ -52,7 +68,20 @@ export default function PostDetailScreen() {
 			<Stack.Screen options={{ title: post.data.author.displayName || post.data.author.username }} />
 			<View style={styles.post}>
 				<Text style={styles.author}>{post.data.author.displayName || post.data.author.username}</Text>
-				<Text style={styles.content}>{post.data.content}</Text>
+				{post.data.authorId === user?.id && isEditing ? (
+					<View style={styles.editBox}>
+						<TextInput value={editingContent} onChangeText={setEditingContent} maxLength={500} multiline style={styles.editInput} />
+						<View style={styles.editActions}>
+							<Pressable accessibilityLabel={t('save')} disabled={!editingContent.trim() || edit.isPending} onPress={() => edit.mutate()}><Text style={styles.saveText}>{t('save')}</Text></Pressable>
+							<Pressable accessibilityLabel={t('cancel')} onPress={() => setIsEditing(false)}><Text>{t('cancel')}</Text></Pressable>
+						</View>
+					</View>
+				) : <Text style={styles.content}>{post.data.content}</Text>}
+				{post.data.authorId === user?.id && !isEditing ? (
+					<Pressable accessibilityRole="button" accessibilityLabel={t('save')} onPress={() => { setEditingContent(post.data.content); setIsEditing(true); }} style={styles.editButton}>
+						<Text style={styles.saveText}>{t('save')}</Text>
+					</Pressable>
+				) : null}
 				{post.data.images.length > 0 ? (
 					<View style={styles.mediaGrid}>
 						{post.data.images.map((image, index) => (
@@ -137,6 +166,11 @@ const styles = StyleSheet.create({
 	post: { backgroundColor: '#fff', padding: 18 },
 	author: { fontSize: 17, fontWeight: '700' },
 	content: { fontSize: 17, lineHeight: 25, marginTop: 12 },
+	editBox: { marginTop: 12 },
+	editInput: { backgroundColor: '#f0f3f0', borderRadius: 8, minHeight: 90, padding: 12 },
+	editActions: { alignItems: 'center', flexDirection: 'row', gap: 16, justifyContent: 'flex-end', marginTop: 8 },
+	editButton: { alignSelf: 'flex-start', marginTop: 12 },
+	saveText: { color: '#087f5b', fontWeight: '700' },
 	mediaGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 12 },
 	mediaImage: { aspectRatio: 1, backgroundColor: '#e1e8e3', borderCurve: 'continuous', borderRadius: 8, overflow: 'hidden', width: '48%' },
 	singleImage: { aspectRatio: 16 / 10, backgroundColor: '#e1e8e3', borderCurve: 'continuous', borderRadius: 8, overflow: 'hidden', width: '100%' },

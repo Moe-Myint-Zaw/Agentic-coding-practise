@@ -214,6 +214,7 @@ export default function FeedScreen() {
                   ? () => confirmDelete(item.id)
                   : undefined
               }
+              onEdit={item.author.id === user?.id ? () => router.push({ pathname: '/post/[id]', params: { id: item.id, edit: '1' } }) : undefined}
               isDeleting={remove.isPending && remove.variables === item.id}
             />
           )}
@@ -226,11 +227,13 @@ export default function FeedScreen() {
 function PostCard({
   post,
   onLike,
+  onEdit,
   onDelete,
   isDeleting,
 }: {
   post: Post;
   onLike: () => void;
+  onEdit?: () => void;
   onDelete?: () => void;
   isDeleting?: boolean;
 }) {
@@ -270,6 +273,22 @@ function PostCard({
         </Pressable>
 
         <View style={styles.headerActions}>
+          {onEdit ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t('save')}
+              hitSlop={8}
+              style={styles.headerIconButton}
+              onPress={onEdit}
+            >
+              <SymbolView
+                pointerEvents="none"
+                name={{ ios: 'pencil', android: 'edit', web: 'edit' }}
+                size={18}
+                tintColor="#087f5b"
+              />
+            </Pressable>
+          ) : null}
           {onDelete ? (
             <Pressable
               accessibilityRole="button"

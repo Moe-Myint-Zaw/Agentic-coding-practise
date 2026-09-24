@@ -3,15 +3,27 @@ import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { PostDetail } from './PostDetail';
 
-const mockUsePost = vi.fn();
-const mockUsePostComments = vi.fn();
-const mockUseCreateComment = vi.fn();
-const mockUseTogglePostLike = vi.fn();
-const mockUseToggleCommentLike = vi.fn();
-const mockUseDeleteComment = vi.fn();
+const {
+  mockUsePost,
+  mockUseUpdatePost,
+  mockUsePostComments,
+  mockUseCreateComment,
+  mockUseTogglePostLike,
+  mockUseToggleCommentLike,
+  mockUseDeleteComment,
+} = vi.hoisted(() => ({
+  mockUsePost: vi.fn(),
+  mockUseUpdatePost: vi.fn(),
+  mockUsePostComments: vi.fn(),
+  mockUseCreateComment: vi.fn(),
+  mockUseTogglePostLike: vi.fn(),
+  mockUseToggleCommentLike: vi.fn(),
+  mockUseDeleteComment: vi.fn(),
+}));
 
 vi.mock('../hooks/usePosts', () => ({
   usePost: mockUsePost,
+  useUpdatePost: mockUseUpdatePost,
 }));
 
 vi.mock('../hooks/useComments', () => ({
@@ -58,6 +70,11 @@ describe('PostDetail', () => {
     mockUsePostComments.mockReturnValue({
       data: { success: true, data: { items: [], pagination: { total: 0 } } },
       isLoading: false,
+    });
+
+    mockUseUpdatePost.mockReturnValue({
+      mutateAsync: vi.fn(),
+      isPending: false,
     });
 
     mockUseCreateComment.mockReturnValue({

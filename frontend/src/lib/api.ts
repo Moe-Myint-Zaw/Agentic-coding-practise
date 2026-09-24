@@ -29,7 +29,7 @@ const getAuthToken = (): string | null => {
 };
 
 // Helper function to make authenticated API calls
-const authenticatedFetch = async (url: string, options: RequestInit = {}) => {
+const authenticatedFetch = async (url: string, options: RequestInit = {}, canRefresh = true): Promise<any> => {
   const token = getAuthToken();
   const headers = {
     'Content-Type': 'application/json',
@@ -44,6 +44,24 @@ const authenticatedFetch = async (url: string, options: RequestInit = {}) => {
 
   if (!response.ok) {
     const error = await response.json();
+    if (response.status === 401 && canRefresh && url !== '/auth/refresh') {
+      const storedTokens = localStorage.getItem('authTokens');
+      const refreshToken = storedTokens ? JSON.parse(storedTokens).refreshToken : null;
+      if (refreshToken) {
+        const refreshResponse = await fetch(`${API_URL}/auth/refresh`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refreshToken }),
+        });
+        const refreshBody = await refreshResponse.json();
+        if (refreshResponse.ok && refreshBody.data?.tokens) {
+          localStorage.setItem('authTokens', JSON.stringify(refreshBody.data.tokens));
+          return authenticatedFetch(url, options, false);
+        }
+      }
+      localStorage.removeItem('authTokens');
+      localStorage.removeItem('authUser');
+    }
     throw new Error(error.error?.message || 'API request failed');
   }
 
@@ -124,6 +142,13 @@ export const api = {
   async createPost(data: { content: string; images?: string[] }): Promise<any> {
     return authenticatedFetch('/posts', {
       method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async updatePost(id: string, data: { content?: string; images?: string[] }): Promise<any> {
+    return authenticatedFetch(`/posts/${id}`, {
+      method: 'PUT',
       body: JSON.stringify(data),
     });
   },

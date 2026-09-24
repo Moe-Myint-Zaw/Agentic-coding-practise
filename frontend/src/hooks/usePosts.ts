@@ -1,10 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../lib/api';
 
-export const usePosts = (params?: { page?: number; limit?: number }) => {
+export const usePosts = (params?: { page?: number; limit?: number }, enabled = true) => {
   return useQuery({
     queryKey: ['posts', params],
     queryFn: () => api.getPosts(params),
+    enabled,
   });
 };
 
@@ -33,6 +34,19 @@ export const useDeletePost = () => {
   return useMutation({
     mutationFn: (id: string) => api.deletePost(id),
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['posts'] });
+      queryClient.invalidateQueries({ queryKey: ['userPosts'] });
+    },
+  });
+};
+
+export const useUpdatePost = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: { content?: string; images?: string[] } }) => api.updatePost(id, data),
+    onSuccess: (response, variables) => {
+      queryClient.setQueryData(['post', variables.id], response);
       queryClient.invalidateQueries({ queryKey: ['posts'] });
       queryClient.invalidateQueries({ queryKey: ['userPosts'] });
     },

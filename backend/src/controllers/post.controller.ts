@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from 'express';
-import { createPost, deletePost, getPostById, getPosts, getUserPosts } from '../services/post.service';
+import { createPost, deletePost, getPostById, getPosts, getUserPosts, updatePost } from '../services/post.service';
 import { authenticate } from '../middleware/auth.middleware';
 
 export const listPosts = async (req: Request, res: Response, next: NextFunction) => {
@@ -40,6 +40,19 @@ export const remove = async (req: Request, res: Response, next: NextFunction) =>
   try {
     const postId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
     const result = await deletePost(postId, req.user!.userId, req.user!.role);
+    res.status(200).json({ success: true, data: result });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const update = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const postId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    const result = await updatePost(postId, req.user!.userId, {
+      content: req.body.content,
+      images: req.body.images,
+    });
     res.status(200).json({ success: true, data: result });
   } catch (error) {
     next(error);

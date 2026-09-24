@@ -1,14 +1,14 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { usePost } from '../hooks/usePosts';
+import { usePost, useUpdatePost } from '../hooks/usePosts';
 import { usePostComments, useCreateComment, useDeleteComment } from '../hooks/useComments';
 import { useTogglePostLike, useToggleCommentLike } from '../hooks/useLikes';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader } from '../components/ui/card';
 import { Input } from '../components/ui/input';
 import { useAuth } from '../contexts/AuthContext';
-import { Heart, MessageCircle, Share2, MoreHorizontal, Trash2, Send } from 'lucide-react';
+import { Heart, MessageCircle, Share2, MoreHorizontal, Trash2, Send, Pencil, Check, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import type { Comment } from '../types';
 import { resolveMediaUrl } from '../lib/api';
@@ -18,6 +18,8 @@ export const PostDetail: React.FC = () => {
   const { user } = useAuth();
   const { id } = useParams<{ id: string }>();
   const [newComment, setNewComment] = useState('');
+  const [editing, setEditing] = useState(false);
+  const [editingContent, setEditingContent] = useState('');
 
   const { data: postResponse, isLoading: postLoading, error: postError } = usePost(id!);
   const { data: commentsResponse, isLoading: commentsLoading } = usePostComments(id!, { page: 1, limit: 20 });
@@ -25,6 +27,7 @@ export const PostDetail: React.FC = () => {
   const togglePostLike = useTogglePostLike();
   const toggleCommentLike = useToggleCommentLike();
   const deleteComment = useDeleteComment();
+  const updatePost = useUpdatePost();
 
   const post = postResponse?.data;
   const comments = (commentsResponse?.data?.items || []).filter(
@@ -119,13 +122,23 @@ export const PostDetail: React.FC = () => {
                 </p>
               </div>
             </div>
-            <Button variant="ghost" size="icon">
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
+            {post.authorId === user?.id ? (
+              <Button variant="ghost" size="icon" aria-label={t('post.editPost')} onClick={() => { setEditing(true); setEditingContent(post.content); }}>
+                <Pencil className="h-4 w-4" />
+              </Button>
+            ) : <Button variant="ghost" size="icon"><MoreHorizontal className="h-4 w-4" /></Button>}
           </div>
         </CardHeader>
         <CardContent>
-          <p className="mb-4">{post.content}</p>
+          {editing ? (
+            <div className="mb-4 flex gap-2">
+              <textarea value={editingContent} onChange={(event) => setEditingContent(event.target.value)} maxLength={500} className="min-h-[100px] flex-1 rounded-md border border-input bg-background p-3" />
+              <div className="flex flex-col gap-2">
+                <Button size="icon" aria-label={t('common.save')} disabled={!editingContent.trim() || updatePost.isPending} onClick={async () => { await updatePost.mutateAsync({ id: post.id, data: { content: editingContent } }); setEditing(false); }}><Check className="h-4 w-4" /></Button>
+                <Button size="icon" variant="ghost" aria-label={t('common.cancel')} onClick={() => setEditing(false)}><X className="h-4 w-4" /></Button>
+              </div>
+            </div>
+          ) : <p className="mb-4">{post.content}</p>}
           {post.images && post.images.length > 0 && (
             <div className="grid grid-cols-2 gap-2 mb-4">
               {post.images.map((image: string, index: number) => (

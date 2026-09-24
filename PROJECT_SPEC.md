@@ -51,7 +51,7 @@ As of the current repository state, the project is already beyond a blank scaffo
 
 - Backend API routes for authentication, refresh, current-user lookup, posts, comments, likes, profile updates, image upload, and admin moderation are present.
 - User authentication flows include registration, login, JWT issuance, refresh token handling, and protected route enforcement.
-- Post and comment operations support listing, creation, retrieval, deletion, and like toggling.
+- Post and comment operations support listing, creation, retrieval, owner-only post editing within 24 hours, deletion, and like toggling.
 - User profile and admin endpoints are implemented for viewing profiles, user-specific posts, stats, moderation lists, and banning.
 - The web app and Expo mobile app are both present in the workspace and wired to the same backend API contract.
 - The remaining roadmap items are still future work and remain intentionally unchanged for the next phase.
@@ -152,10 +152,11 @@ As of the current repository state, the project is already beyond a blank scaffo
 - View individual post details
 - Display post author, content, images, timestamp, like count, comment count
 
-#### Edit Post (Future)
+#### Edit Post
 - Edit own posts within 24 hours of creation
 - Preserve original creation timestamp
-- Track edit history
+- Update the post's `updatedAt` timestamp
+- Reject edits by other users and edits after the 24-hour window
 
 #### Delete Post
 - Users can delete their own posts

@@ -79,6 +79,35 @@ export const deletePost = async (id: string, userId: string, userRole: 'USER' | 
   return { deleted: true };
 };
 
+export const updatePost = async (
+  id: string,
+  userId: string,
+  input: { content?: string; images?: string[] },
+) => {
+  const post = await prisma.post.findUnique({ where: { id } });
+  if (!post) throw new ApiError('Post not found', 404, 'POST_NOT_FOUND');
+  if (post.authorId !== userId) {
+    throw new ApiError('You can only edit your own post', 403, 'FORBIDDEN');
+  }
+  if (Date.now() - post.createdAt.getTime() > 24 * 60 * 60 * 1000) {
+    throw new ApiError('Posts can only be edited within 24 hours', 403, 'POST_EDIT_EXPIRED');
+  }
+
+  const content = input.content ?? post.content;
+  const images = input.images ?? parseImages(post.images);
+  if (!content.trim() && images.length === 0) {
+    throw new ApiError('Post content or image is required', 400, 'POST_CONTENT_REQUIRED');
+  }
+
+  const updatedPost = await prisma.post.update({
+    where: { id },
+    data: { content, images: JSON.stringify(images) },
+    include: { author: true, comments: true, likes: true },
+  });
+
+  return serializePost(updatedPost);
+};
+
 export const getUserPosts = async (userId: string, page = 1, limit = 20) => {
   const skip = (page - 1) * limit;
   const [items, total] = await Promise.all([
