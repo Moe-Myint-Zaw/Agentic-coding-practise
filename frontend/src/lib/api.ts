@@ -205,6 +205,14 @@ export const api = {
     return response.data;
   },
 
+  async searchUsers(query: string, params?: { page?: number; limit?: number }): Promise<any> {
+    const queryParams = new URLSearchParams({ q: query });
+    if (params?.page) queryParams.append('page', params.page.toString());
+    if (params?.limit) queryParams.append('limit', params.limit.toString());
+    const response = await authenticatedFetch(`/users/search?${queryParams.toString()}`);
+    return response.data;
+  },
+
   async followUser(id: string): Promise<{ following: boolean; userId: string }> {
     const response = await authenticatedFetch(`/users/${id}/follow`, { method: 'POST' });
     return response.data;

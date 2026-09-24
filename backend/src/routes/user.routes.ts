@@ -1,10 +1,11 @@
 import { Router } from 'express';
-import { follow, getUser, updateProfile, listUsersByAdmin, ban, unfollow } from '../controllers/user.controller';
+import { ban, follow, getUser, listUsersByAdmin, searchUsersForUser, unfollow, updateProfile } from '../controllers/user.controller';
 import { authenticate, authorize, optionalAuthenticate } from '../middleware/auth.middleware';
 
 const router = Router();
 
 router.get('/', authenticate, authorize(['ADMIN']), listUsersByAdmin);
+router.get('/search', authenticate, searchUsersForUser);
 router.get('/:id/posts', async (req, res, next) => {
   try {
     const { getUserPosts } = await import('../services/post.service');

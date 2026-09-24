@@ -130,6 +130,61 @@ export const listUsers = async (page = 1, limit = 20, search = '') => {
   };
 };
 
+export const searchUsers = async (query: string, viewerId: string, page = 1, limit = 20) => {
+  const skip = (page - 1) * limit;
+  const where = {
+    OR: [
+      { username: { contains: query } },
+      { displayName: { contains: query } },
+    ],
+  };
+
+  const [users, total, following] = await Promise.all([
+    prisma.user.findMany({
+      where,
+      select: {
+        id: true,
+        username: true,
+        displayName: true,
+        bio: true,
+        profileImage: true,
+        createdAt: true,
+        _count: { select: { followers: true, following: true } },
+      },
+      skip,
+      take: limit,
+      orderBy: { username: 'asc' },
+    }),
+    prisma.user.count({ where }),
+    prisma.follow.findMany({
+      where: { followerId: viewerId },
+      select: { followingId: true },
+    }),
+  ]);
+
+  const followingIds = new Set(following.map((item) => item.followingId));
+
+  return {
+    items: users.map((user) => ({
+      id: user.id,
+      username: user.username,
+      displayName: user.displayName,
+      bio: user.bio,
+      profileImage: user.profileImage,
+      createdAt: user.createdAt,
+      followerCount: user._count.followers,
+      followingCount: user._count.following,
+      isFollowing: followingIds.has(user.id),
+    })),
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+    },
+  };
+};
+
 export const banUser = async (id: string, isBanned: boolean) => {
   const user = await prisma.user.findUnique({ where: { id } });
   if (!user) throw new ApiError('User not found', 404, 'USER_NOT_FOUND');

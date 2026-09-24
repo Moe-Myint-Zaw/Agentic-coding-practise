@@ -209,6 +209,8 @@ export const api = {
       method: "POST",
     }),
   profile: (id: string) => request<User>(`/users/${id}`),
+  searchUsers: (query: string, page = 1) =>
+    request<Page<User>>(`/users/search?q=${encodeURIComponent(query)}&page=${page}&limit=20`),
   followUser: (id: string) => request<{ following: boolean; userId: string }>(`/users/${id}/follow`, { method: 'POST' }),
   unfollowUser: (id: string) => request<{ following: boolean; userId: string }>(`/users/${id}/follow`, { method: 'DELETE' }),
   userPosts: (id: string, page = 1) =>

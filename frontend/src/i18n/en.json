@@ -10,6 +10,14 @@
     "admin": "Admin",
     "search": "Search"
   },
+  "search": {
+    "title": "Find people",
+    "description": "Search for users by username or display name.",
+    "inputLabel": "Search users",
+    "placeholder": "Type a name or username...",
+    "loading": "Searching...",
+    "empty": "No users found."
+  },
   "feed": {
     "filters": "Feed filter",
     "latest": "Latest",

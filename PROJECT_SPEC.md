@@ -54,7 +54,7 @@ As of the current repository state, the project is already beyond a blank scaffo
 - Post and comment operations support listing, creation, retrieval, owner-only post editing within 24 hours, deletion, and like toggling.
 - User profile and admin endpoints are implemented for viewing profiles, user-specific posts, stats, moderation lists, and banning.
 - The web app and Expo mobile app are both present in the workspace and wired to the same backend API contract.
-- The remaining roadmap items are still future work and remain intentionally unchanged for the next phase.
+- User search is implemented for authenticated users on web API and mobile, with paginated matching by username or display name.
 
 ## Project Goals
 
@@ -73,13 +73,13 @@ As of the current repository state, the project is already beyond a blank scaffo
 - Comments (create and delete comments on posts)
 - Likes & Reactions (toggle like/unlike posts and comments)
 - User Profiles (view profiles, update profile details, list user posts)
+- User Search (authenticated users can find profiles by username or display name)
 - Follow system (authenticated users can follow and unfollow other users)
 - Basic Admin Moderation (stats, user list, content lists, ban actions)
 
 ### Future Phases
 - Follow System (follow/unfollow users)
 - Feed Filtering (Latest and Following feeds)
-- Search (find users by name)
 - Real-time Notifications (WebSocket-based notifications)
 - Advanced Privacy Settings
 - Enhanced Profiles (cover photos, location, website)

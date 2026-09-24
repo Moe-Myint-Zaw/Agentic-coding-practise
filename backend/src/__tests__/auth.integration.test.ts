@@ -113,4 +113,44 @@ describe('Auth integration', () => {
     expect(unfollowRes.status).toBe(200);
     expect(unfollowRes.body.data.following).toBe(false);
   });
+
+  it('lets any authenticated user search public profiles by username or display name', async () => {
+    const targetRes = await request(app)
+      .post('/api/v1/auth/register')
+      .send({
+        email: `search-${Date.now()}@example.com`,
+        username: `s${Date.now()}`,
+        password: 'password123',
+      });
+    const targetId = targetRes.body.data.user.id;
+
+    await prisma.user.update({ where: { id: targetId }, data: { displayName: 'Searchable Person' } });
+
+    const token = (await request(app).post('/api/v1/auth/login').send({
+      email: 'test@example.com',
+      password: 'password123',
+    })).body.data.tokens.accessToken;
+    const searchRes = await request(app)
+      .get('/api/v1/users/search?q=searchable')
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(searchRes.status).toBe(200);
+    expect(searchRes.body.data.items).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: targetId, displayName: 'Searchable Person' }),
+    ]));
+    expect(searchRes.body.data.items[0].email).toBeUndefined();
+  });
+
+  it('rejects search queries shorter than two characters', async () => {
+    const token = (await request(app).post('/api/v1/auth/login').send({
+      email: 'test@example.com',
+      password: 'password123',
+    })).body.data.tokens.accessToken;
+    const response = await request(app)
+      .get('/api/v1/users/search?q=a')
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(response.status).toBe(400);
+    expect(response.body.error.code).toBe('INVALID_SEARCH_QUERY');
+  });
 });

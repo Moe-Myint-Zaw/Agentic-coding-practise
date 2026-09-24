@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
-import { Moon, Sun, Globe, LogOut, User } from 'lucide-react';
+import { Moon, Sun, Globe, LogOut, User, Search } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Link, useNavigate } from 'react-router-dom';
 
@@ -31,6 +31,10 @@ export const Header: React.FC = () => {
             <nav className="hidden md:flex items-center gap-4">
               <Link to="/feed" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                 {t('nav.feed')}
+              </Link>
+              <Link to="/search" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
+                <Search className="h-4 w-4" />
+                {t('nav.search')}
               </Link>
               <Link to={`/profile/${user?.id}`} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                 {t('nav.profile')}

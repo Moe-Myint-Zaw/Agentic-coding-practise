@@ -18,6 +18,7 @@ import { Admin } from './pages/Admin'
 import { PostDetail } from './pages/PostDetail'
 import { LoginForm } from './components/auth/LoginForm'
 import { RegisterForm } from './components/auth/RegisterForm'
+import { SearchPage } from './pages/Search'
 
 const router = createBrowserRouter([
   {
@@ -26,6 +27,7 @@ const router = createBrowserRouter([
     children: [
       { index: true, element: <Home /> },
       { path: 'feed', element: <Feed /> },
+      { path: 'search', element: <SearchPage /> },
       { path: 'post/:id', element: <PostDetail /> },
       { path: 'profile/:id?', element: <Profile /> },
       { path: 'settings', element: <Settings /> },
