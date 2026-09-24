@@ -10,6 +10,11 @@
     "admin": "အကြီးအကဲ",
     "search": "ရှာဖွေရန်"
   },
+  "feed": {
+    "filters": "ဖိဒ်စစ်ထုတ်မှု",
+    "latest": "နောက်ဆုံးတင်ထားသည်များ",
+    "following": "လိုက်နေသူများ"
+  },
   "auth": {
     "loginTitle": "ဝင်ရောက်ပါ",
     "registerTitle": "အကောင့်ဖွင့်ပါ",
@@ -62,6 +67,8 @@
     "postsCount": "ပို့စ်များ",
     "followers": "လိုက်လာသူများ",
     "following": "လိုက်နေသူများ",
+    "follow": "လိုက်ရန်",
+    "unfollow": "မလိုက်တော့ရန်",
     "joined": "ပါဝင်သည်",
     "bioPlaceholder": "ကျွန်ုပ်အကြောင်းပြောပါ...",
     "displayNamePlaceholder": "သင့်ပြသအမည်"

@@ -10,6 +10,9 @@ export interface User {
   isBanned: boolean;
   createdAt: string;
   updatedAt: string;
+  followerCount?: number;
+  followingCount?: number;
+  isFollowing?: boolean;
 }
 
 // Post Types

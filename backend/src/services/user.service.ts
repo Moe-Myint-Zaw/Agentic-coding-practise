@@ -1,17 +1,22 @@
 import prisma from '../config/database';
 import { ApiError } from '../middleware/error.middleware';
 
-export const getUserById = async (id: string) => {
+export const getUserById = async (id: string, viewerId?: string) => {
   const user = await prisma.user.findUnique({
     where: { id },
     include: {
       posts: { where: { isDeleted: false }, orderBy: { createdAt: 'desc' } },
       comments: { where: { isDeleted: false } },
       likes: true,
+      _count: { select: { followers: true, following: true } },
     },
   });
 
   if (!user) throw new ApiError('User not found', 404, 'USER_NOT_FOUND');
+
+  const follow = viewerId && viewerId !== id
+    ? await prisma.follow.findUnique({ where: { followerId_followingId: { followerId: viewerId, followingId: id } } })
+    : null;
 
   return {
     id: user.id,
@@ -25,8 +30,34 @@ export const getUserById = async (id: string) => {
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
     postCount: user.posts.length,
+    followerCount: user._count.followers,
+    followingCount: user._count.following,
+    isFollowing: Boolean(follow),
     posts: user.posts,
   };
+};
+
+export const followUser = async (followerId: string, followingId: string) => {
+  if (followerId === followingId) throw new ApiError('You cannot follow yourself', 400, 'SELF_FOLLOW');
+
+  const target = await prisma.user.findUnique({ where: { id: followingId }, select: { id: true } });
+  if (!target) throw new ApiError('User not found', 404, 'USER_NOT_FOUND');
+
+  await prisma.follow.upsert({
+    where: { followerId_followingId: { followerId, followingId } },
+    create: { followerId, followingId },
+    update: {},
+  });
+
+  return { following: true, userId: followingId };
+};
+
+export const unfollowUser = async (followerId: string, followingId: string) => {
+  const target = await prisma.user.findUnique({ where: { id: followingId }, select: { id: true } });
+  if (!target) throw new ApiError('User not found', 404, 'USER_NOT_FOUND');
+
+  await prisma.follow.deleteMany({ where: { followerId, followingId } });
+  return { following: false, userId: followingId };
 };
 
 export const updateUser = async (id: string, data: { displayName?: string; bio?: string; profileImage?: string }) => {

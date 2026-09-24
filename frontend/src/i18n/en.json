@@ -10,6 +10,11 @@
     "admin": "Admin",
     "search": "Search"
   },
+  "feed": {
+    "filters": "Feed filter",
+    "latest": "Latest",
+    "following": "Following"
+  },
   "auth": {
     "loginTitle": "Sign In",
     "registerTitle": "Create Account",
@@ -62,6 +67,8 @@
     "postsCount": "posts",
     "followers": "Followers",
     "following": "Following",
+    "follow": "Follow",
+    "unfollow": "Unfollow",
     "joined": "Joined",
     "bioPlaceholder": "Tell us about yourself...",
     "displayNamePlaceholder": "Your display name"

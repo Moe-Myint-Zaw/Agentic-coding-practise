@@ -19,10 +19,11 @@ export const Feed: React.FC = () => {
   const [uploadError, setUploadError] = useState('');
   const [editingPostId, setEditingPostId] = useState<string | null>(null);
   const [editingContent, setEditingContent] = useState('');
+  const [feed, setFeed] = useState<'latest' | 'following'>('latest');
   const imageInputRef = useRef<HTMLInputElement>(null);
 
   const { data: postsData, isLoading, error } = usePosts(
-    { page: 1, limit: 20 },
+    { page: 1, limit: 20, feed },
     !authLoading && isAuthenticated,
   );
   const createPost = useCreatePost();
@@ -120,6 +121,20 @@ export const Feed: React.FC = () => {
     <div className="max-w-2xl mx-auto">
       <div className="mb-6">
         <h1 className="text-2xl font-bold mb-4">{t('nav.feed')}</h1>
+        <div className="flex gap-2 mb-4" role="tablist" aria-label={t('feed.filters')}>
+          {(['latest', 'following'] as const).map((option) => (
+            <Button
+              key={option}
+              type="button"
+              variant={feed === option ? 'default' : 'outline'}
+              role="tab"
+              aria-selected={feed === option}
+              onClick={() => setFeed(option)}
+            >
+              {t(`feed.${option}`)}
+            </Button>
+          ))}
+        </div>
         <Card>
           <CardContent className="pt-6">
             <textarea

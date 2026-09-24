@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../lib/api';
 
-export const usePosts = (params?: { page?: number; limit?: number }, enabled = true) => {
+export const usePosts = (params?: { page?: number; limit?: number; feed?: 'latest' | 'following' }, enabled = true) => {
   return useQuery({
     queryKey: ['posts', params],
     queryFn: () => api.getPosts(params),

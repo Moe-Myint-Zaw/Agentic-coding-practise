@@ -1,12 +1,17 @@
 import { NextFunction, Request, Response } from 'express';
-import { createPost, deletePost, getPostById, getPosts, getUserPosts, updatePost } from '../services/post.service';
+import { createPost, deletePost, getPostById, getPosts, getUserPosts, updatePost, type FeedType } from '../services/post.service';
 import { authenticate } from '../middleware/auth.middleware';
 
 export const listPosts = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const page = Number(req.query.page || 1);
     const limit = Number(req.query.limit || 20);
-    const result = await getPosts(page, limit);
+    const feed = req.query.feed || 'latest';
+    if (feed !== 'latest' && feed !== 'following') {
+      res.status(400).json({ success: false, error: { message: 'Feed must be latest or following', code: 'INVALID_FEED' } });
+      return;
+    }
+    const result = await getPosts(page, limit, feed as FeedType, req.user!.userId);
     res.status(200).json({ success: true, data: result });
   } catch (error) {
     next(error);

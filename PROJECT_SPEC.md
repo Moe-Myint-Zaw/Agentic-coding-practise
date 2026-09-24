@@ -73,13 +73,14 @@ As of the current repository state, the project is already beyond a blank scaffo
 - Comments (create and delete comments on posts)
 - Likes & Reactions (toggle like/unlike posts and comments)
 - User Profiles (view profiles, update profile details, list user posts)
+- Follow system (authenticated users can follow and unfollow other users)
 - Basic Admin Moderation (stats, user list, content lists, ban actions)
 
 ### Future Phases
 - Follow System (follow/unfollow users)
+- Feed Filtering (Latest and Following feeds)
 - Search (find users by name)
 - Real-time Notifications (WebSocket-based notifications)
-- Feed Filtering (Latest vs Following feeds)
 - Advanced Privacy Settings
 - Enhanced Profiles (cover photos, location, website)
 - Multi-level Comment Threading
@@ -202,6 +203,14 @@ As of the current repository state, the project is already beyond a blank scaffo
 - Display username, display name, bio, profile picture
 - Display user's post count
 - Display user's posts (sorted by creation date)
+- Display follower and following counts and whether the authenticated viewer follows the profile
+
+### Follow System
+
+- Authenticated users can follow another user with `POST /api/v1/users/:id/follow`
+- Authenticated users can unfollow another user with `DELETE /api/v1/users/:id/follow`
+- Following the same user twice is idempotent; unfollowing an already-unfollowed user is also idempotent
+- Users cannot follow themselves, and following a missing user returns `404`
 - Pagination (20 posts per page)
 
 #### Edit Profile

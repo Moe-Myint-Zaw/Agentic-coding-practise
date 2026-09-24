@@ -1,16 +1,17 @@
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, resolveMediaUrl } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 import { useUserPosts } from '../hooks/usePosts';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader } from '../components/ui/card';
-import { Edit, Calendar } from 'lucide-react';
+import { Heart, MessageCircle, Share2, Edit, Calendar, UserPlus, UserMinus } from 'lucide-react';
 
 export const Profile: React.FC = () => {
   const { t } = useTranslation();
   const { user: currentUser } = useAuth();
+  const queryClient = useQueryClient();
   const { id } = useParams<{ id: string }>();
   const isOwnProfile = !id || id === currentUser?.id;
   const profileId = id || currentUser?.id;
@@ -22,6 +23,31 @@ export const Profile: React.FC = () => {
   });
 
   const user = userResponse;
+
+  const followMutation = useMutation({
+    mutationFn: () => user?.isFollowing ? api.unfollowUser(user.id) : api.followUser(user!.id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['user', profileId] }),
+  });
+
+  const likeMutation = useMutation({
+    mutationFn: (postId: string) => api.togglePostLike(postId),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['user-posts', profileId] }),
+  });
+
+  const handleShare = async (post: any) => {
+    const shareData = {
+      title: user?.displayName || user?.username || t('nav.profile'),
+      text: post.content,
+      url: `${window.location.origin}/post/${post.id}`,
+    };
+
+    if (navigator.share) {
+      await navigator.share(shareData);
+      return;
+    }
+
+    await navigator.clipboard?.writeText(`${shareData.text}\n${shareData.url}`);
+  };
 
   const { data: postsData } = useUserPosts(profileId!, { page: 1, limit: 20 });
 
@@ -65,6 +91,17 @@ export const Profile: React.FC = () => {
                 )}
               </div>
             </div>
+            {!isOwnProfile && currentUser && (
+              <Button
+                variant={user.isFollowing ? 'outline' : 'default'}
+                size="sm"
+                onClick={() => followMutation.mutate()}
+                disabled={followMutation.isPending}
+              >
+                {user.isFollowing ? <UserMinus className="h-4 w-4 mr-2" /> : <UserPlus className="h-4 w-4 mr-2" />}
+                {user.isFollowing ? t('profile.unfollow') : t('profile.follow')}
+              </Button>
+            )}
             {isOwnProfile && (
               <Button variant="outline" size="sm">
                 <Edit className="h-4 w-4 mr-2" />
@@ -81,6 +118,12 @@ export const Profile: React.FC = () => {
             </div>
             <div>
               <span className="font-medium text-foreground">{posts.length}</span> {t('profile.postsCount')}
+            </div>
+            <div>
+              <span className="font-medium text-foreground">{user.followerCount ?? 0}</span> {t('profile.followers')}
+            </div>
+            <div>
+              <span className="font-medium text-foreground">{user.followingCount ?? 0}</span> {t('profile.following')}
             </div>
           </div>
         </CardContent>
@@ -131,6 +174,34 @@ export const Profile: React.FC = () => {
                     ))}
                   </div>
                 )}
+                <div className="flex items-center gap-4 pt-4 border-t">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="gap-2"
+                    onClick={() => likeMutation.mutate(post.id)}
+                    disabled={likeMutation.isPending}
+                    aria-label={t(post.likes?.some((like: any) => like.userId === currentUser?.id) ? 'post.unlikePost' : 'post.likePost')}
+                  >
+                    <Heart className="h-4 w-4" fill={post.likes?.some((like: any) => like.userId === currentUser?.id) ? 'currentColor' : 'none'} />
+                    {post._count?.likes || 0}
+                  </Button>
+                  <Link to={`/post/${post.id}`}>
+                    <Button variant="ghost" size="sm" className="gap-2" aria-label={t('post.commentPost')}>
+                      <MessageCircle className="h-4 w-4" />
+                      {post._count?.comments || 0}
+                    </Button>
+                  </Link>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="gap-2"
+                    aria-label={t('post.sharePost')}
+                    onClick={() => handleShare(post)}
+                  >
+                    <Share2 className="h-4 w-4" />
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           ))}

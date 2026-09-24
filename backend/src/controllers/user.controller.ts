@@ -1,10 +1,30 @@
 import { NextFunction, Request, Response } from 'express';
-import { banUser, getUserById, listUsers, updateUser } from '../services/user.service';
+import { banUser, followUser, getUserById, listUsers, unfollowUser, updateUser } from '../services/user.service';
 
 export const getUser = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-    const result = await getUserById(userId);
+    const result = await getUserById(userId, req.user?.userId);
+    res.status(200).json({ success: true, data: result });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const follow = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    const result = await followUser(req.user!.userId, userId);
+    res.status(200).json({ success: true, data: result });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const unfollow = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    const result = await unfollowUser(req.user!.userId, userId);
     res.status(200).json({ success: true, data: result });
   } catch (error) {
     next(error);

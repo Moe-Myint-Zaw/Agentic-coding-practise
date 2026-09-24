@@ -31,6 +31,18 @@ export const authenticate = (req: Request, res: Response, next: NextFunction) =>
   }
 };
 
+export const optionalAuthenticate = (req: Request, _res: Response, next: NextFunction) => {
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  if (token) {
+    try {
+      req.user = verifyAccessToken(token) as JWTPayload;
+    } catch {
+      // Public routes remain accessible when an optional token is stale.
+    }
+  }
+  next();
+};
+
 export const authorize = (roles: Array<'USER' | 'ADMIN'>) => {
   return (req: Request, res: Response, next: NextFunction) => {
     const user = req.user as JWTPayload | undefined;

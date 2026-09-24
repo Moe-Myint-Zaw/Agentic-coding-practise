@@ -84,4 +84,33 @@ describe('Auth integration', () => {
     expect(profileRes.body.success).toBe(true);
     expect(profileRes.body.data.id).toBe(userRes.body.data.user.id);
   });
+
+  it('allows users to follow and unfollow another user', async () => {
+    const target = await prisma.user.findFirst({ where: { username: { not: 'testuser' } } });
+    expect(target).toBeTruthy();
+    const source = await request(app).post('/api/v1/auth/login').send({
+      email: 'test@example.com',
+      password: 'password123',
+    });
+    const token = source.body.data.tokens.accessToken;
+    const targetId = target!.id;
+
+    const followRes = await request(app)
+      .post(`/api/v1/users/${targetId}/follow`)
+      .set('Authorization', `Bearer ${token}`);
+    expect(followRes.status).toBe(200);
+    expect(followRes.body.data.following).toBe(true);
+
+    const profileRes = await request(app)
+      .get(`/api/v1/users/${targetId}`)
+      .set('Authorization', `Bearer ${token}`);
+    expect(profileRes.body.data.isFollowing).toBe(true);
+    expect(profileRes.body.data.followerCount).toBe(1);
+
+    const unfollowRes = await request(app)
+      .delete(`/api/v1/users/${targetId}/follow`)
+      .set('Authorization', `Bearer ${token}`);
+    expect(unfollowRes.status).toBe(200);
+    expect(unfollowRes.body.data.following).toBe(false);
+  });
 });

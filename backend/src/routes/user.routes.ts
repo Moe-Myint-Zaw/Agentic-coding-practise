@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { getUser, updateProfile, listUsersByAdmin, ban } from '../controllers/user.controller';
-import { authenticate, authorize } from '../middleware/auth.middleware';
+import { follow, getUser, updateProfile, listUsersByAdmin, ban, unfollow } from '../controllers/user.controller';
+import { authenticate, authorize, optionalAuthenticate } from '../middleware/auth.middleware';
 
 const router = Router();
 
@@ -17,7 +17,9 @@ router.get('/:id/posts', async (req, res, next) => {
     next(error);
   }
 });
-router.get('/:id', getUser);
+router.get('/:id', optionalAuthenticate, getUser);
+router.post('/:id/follow', authenticate, follow);
+router.delete('/:id/follow', authenticate, unfollow);
 router.put('/:id', authenticate, updateProfile);
 router.patch('/:id/ban', authenticate, authorize(['ADMIN']), ban);
 

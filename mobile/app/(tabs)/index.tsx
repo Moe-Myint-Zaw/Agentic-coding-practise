@@ -19,7 +19,7 @@ import {
   View,
 } from 'react-native';
 import { RemoteImage } from '@/components/remote-image';
-import { api, ApiError, resolveMediaUrl } from '@/lib/api-client';
+import { api, ApiError, postsByFeed, resolveMediaUrl } from '@/lib/api-client';
 import { useAuth } from '@/contexts/auth-context';
 import { useLocale } from '@/contexts/locale-context';
 import type { Post } from '@/types';
@@ -53,8 +53,9 @@ export default function FeedScreen() {
   const [content, setContent] = useState('');
   const [selectedImages, setSelectedImages] = useState<SelectedImage[]>([]);
   const [uploadError, setUploadError] = useState('');
+  const [feedType, setFeedType] = useState<'latest' | 'following'>('latest');
 
-  const feed = useQuery({ queryKey: ['posts'], queryFn: () => api.posts() });
+  const feed = useQuery({ queryKey: ['posts', feedType], queryFn: () => postsByFeed(1, feedType) });
   const create = useMutation({
     mutationFn: async () => {
       const uploadedImages = await Promise.all(selectedImages.map((image) => api.uploadImage(image)));
@@ -187,6 +188,20 @@ export default function FeedScreen() {
         </View>
       </View>
 
+      <View style={styles.feedTabs} accessibilityRole="tablist">
+        {(['latest', 'following'] as const).map((option) => (
+          <Pressable
+            key={option}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: feedType === option }}
+            style={[styles.feedTab, feedType === option && styles.feedTabActive]}
+            onPress={() => setFeedType(option)}
+          >
+            <Text style={[styles.feedTabText, feedType === option && styles.feedTabTextActive]}>{t(option)}</Text>
+          </Pressable>
+        ))}
+      </View>
+
       {feed.isLoading ? (
         <ActivityIndicator style={styles.center} />
       ) : feed.isError ? (
@@ -253,9 +268,9 @@ function PostCard({
       <View style={styles.postHeader}>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={`${authorName} post`}
+          accessibilityLabel={`${authorName} profile`}
           style={styles.authorPressable}
-          onPress={openPost}
+          onPress={() => router.push({ pathname: '/profile/[id]', params: { id: post.author.id } })}
         >
           {post.author.profileImage ? (
             <RemoteImage uri={resolveMediaUrl(post.author.profileImage)} style={styles.avatarImage} />
@@ -397,6 +412,11 @@ function createStyles(colors: ThemeColors) { return StyleSheet.create({
     borderBottomWidth: 1,
     padding: 14,
   },
+  feedTabs: { backgroundColor: colors.surface, borderBottomColor: colors.border, borderBottomWidth: 1, flexDirection: 'row', paddingHorizontal: 14 },
+  feedTab: { alignItems: 'center', borderBottomColor: 'transparent', borderBottomWidth: 2, flex: 1, justifyContent: 'center', minHeight: 46 },
+  feedTabActive: { borderBottomColor: colors.tint },
+  feedTabText: { color: colors.mutedText, fontWeight: '600' },
+  feedTabTextActive: { color: colors.tint, fontWeight: '800' },
   composerActions: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 },
   composeInput: { color: colors.text, minHeight: 48, padding: 8, textAlignVertical: 'top' },
   imageButton: { alignItems: 'center', flexDirection: 'row', gap: 6, minHeight: 44, paddingHorizontal: 4 },

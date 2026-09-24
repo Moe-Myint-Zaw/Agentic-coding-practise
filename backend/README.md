@@ -13,3 +13,7 @@ Independent backend application scaffolded from the backend-starter skill for th
 ## API base
 
 `/api/v1`
+
+## Authentication rate limiting
+
+Authentication requests are limited to 5 attempts per 15 minutes in production. Development and test environments allow 100 attempts by default. Override these values with `AUTH_RATE_LIMIT_MAX` and `AUTH_RATE_LIMIT_WINDOW_MS` when needed.

@@ -12,6 +12,8 @@ const envSchema = z.object({
   JWT_REFRESH_SECRET: z.string().min(32).default('replace-with-a-long-refresh-secret-key-1234'),
   JWT_REFRESH_EXPIRES_IN: z.string().default('7d'),
   CORS_ORIGIN: z.string().default('*'),
+  AUTH_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(process.env.NODE_ENV === 'production' ? 5 : 100),
+  AUTH_RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(15 * 60 * 1000),
 });
 
 const env = envSchema.parse(process.env);

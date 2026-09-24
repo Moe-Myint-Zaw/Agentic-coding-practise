@@ -127,10 +127,11 @@ export const api = {
   },
 
   // Post endpoints
-  async getPosts(params?: { page?: number; limit?: number }): Promise<any> {
+  async getPosts(params?: { page?: number; limit?: number; feed?: 'latest' | 'following' }): Promise<any> {
     const queryParams = new URLSearchParams();
     if (params?.page) queryParams.append('page', params.page.toString());
     if (params?.limit) queryParams.append('limit', params.limit.toString());
+    if (params?.feed) queryParams.append('feed', params.feed);
 
     return authenticatedFetch(`/posts?${queryParams.toString()}`);
   },
@@ -201,6 +202,16 @@ export const api = {
   // User endpoints
   async getUser(id: string): Promise<User> {
     const response = await authenticatedFetch(`/users/${id}`);
+    return response.data;
+  },
+
+  async followUser(id: string): Promise<{ following: boolean; userId: string }> {
+    const response = await authenticatedFetch(`/users/${id}/follow`, { method: 'POST' });
+    return response.data;
+  },
+
+  async unfollowUser(id: string): Promise<{ following: boolean; userId: string }> {
+    const response = await authenticatedFetch(`/users/${id}/follow`, { method: 'DELETE' });
     return response.data;
   },
 

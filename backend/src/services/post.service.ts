@@ -1,11 +1,16 @@
 import prisma from '../config/database';
 import { ApiError } from '../middleware/error.middleware';
 
-export const getPosts = async (page = 1, limit = 20) => {
+export type FeedType = 'latest' | 'following';
+
+export const getPosts = async (page = 1, limit = 20, feed: FeedType = 'latest', userId?: string) => {
   const skip = (page - 1) * limit;
+  const where = feed === 'following'
+    ? { isDeleted: false, author: { followers: { some: { followerId: userId } } } }
+    : { isDeleted: false };
   const [items, total] = await Promise.all([
     prisma.post.findMany({
-      where: { isDeleted: false },
+      where,
       include: {
         author: true,
         comments: { where: { isDeleted: false } },
@@ -15,7 +20,7 @@ export const getPosts = async (page = 1, limit = 20) => {
       skip,
       take: limit,
     }),
-    prisma.post.count({ where: { isDeleted: false } }),
+    prisma.post.count({ where }),
   ]);
 
   return {
