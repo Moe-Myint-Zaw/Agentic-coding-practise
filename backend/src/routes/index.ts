@@ -6,6 +6,7 @@ import likeRoutes from './like.routes';
 import userRoutes from './user.routes';
 import adminRoutes from './admin.routes';
 import uploadRoutes from './upload.routes';
+import notificationRoutes from './notification.routes';
 
 const router = Router();
 
@@ -16,5 +17,6 @@ router.use('/likes', likeRoutes);
 router.use('/users', userRoutes);
 router.use('/admin', adminRoutes);
 router.use('/upload', uploadRoutes);
+router.use('/notifications', notificationRoutes);
 
 export default router;

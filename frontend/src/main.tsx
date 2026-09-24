@@ -19,6 +19,7 @@ import { PostDetail } from './pages/PostDetail'
 import { LoginForm } from './components/auth/LoginForm'
 import { RegisterForm } from './components/auth/RegisterForm'
 import { SearchPage } from './pages/Search'
+import { Notifications } from './pages/Notifications'
 
 const router = createBrowserRouter([
   {
@@ -28,6 +29,7 @@ const router = createBrowserRouter([
       { index: true, element: <Home /> },
       { path: 'feed', element: <Feed /> },
       { path: 'search', element: <SearchPage /> },
+      { path: 'notifications', element: <Notifications /> },
       { path: 'post/:id', element: <PostDetail /> },
       { path: 'profile/:id?', element: <Profile /> },
       { path: 'settings', element: <Settings /> },

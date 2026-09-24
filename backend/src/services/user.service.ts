@@ -1,5 +1,6 @@
 import prisma from '../config/database';
 import { ApiError } from '../middleware/error.middleware';
+import { createNotification } from './notification.service';
 
 export const getUserById = async (id: string, viewerId?: string) => {
   const user = await prisma.user.findUnique({
@@ -43,11 +44,18 @@ export const followUser = async (followerId: string, followingId: string) => {
   const target = await prisma.user.findUnique({ where: { id: followingId }, select: { id: true } });
   if (!target) throw new ApiError('User not found', 404, 'USER_NOT_FOUND');
 
+  const existing = await prisma.follow.findUnique({
+    where: { followerId_followingId: { followerId, followingId } },
+  });
+
   await prisma.follow.upsert({
     where: { followerId_followingId: { followerId, followingId } },
     create: { followerId, followingId },
     update: {},
   });
+  if (!existing) {
+    await createNotification({ recipientId: followingId, actorId: followerId, type: 'FOLLOWED' });
+  }
 
   return { following: true, userId: followingId };
 };

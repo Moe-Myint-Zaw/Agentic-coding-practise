@@ -143,3 +143,26 @@ export interface UserManagementData {
     totalPages: number;
   };
 }
+
+export type NotificationType = 'POST_LIKED' | 'COMMENT_LIKED' | 'COMMENT_CREATED' | 'FOLLOWED';
+
+export interface Notification {
+  id: string;
+  type: NotificationType;
+  postId: string | null;
+  commentId: string | null;
+  readAt: string | null;
+  createdAt: string;
+  actor: Pick<User, 'id' | 'username' | 'displayName' | 'profileImage'>;
+}
+
+export interface NotificationsResponse {
+  items: Notification[];
+  unreadCount: number;
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}

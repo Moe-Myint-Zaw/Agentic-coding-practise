@@ -1,15 +1,17 @@
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
-import { Moon, Sun, Globe, LogOut, User, Search } from 'lucide-react';
+import { Moon, Sun, Globe, LogOut, User, Search, Bell } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Link, useNavigate } from 'react-router-dom';
+import { useNotifications } from '../../hooks/useNotifications';
 
 export const Header: React.FC = () => {
   const { t, i18n } = useTranslation();
   const { user, logout, isAuthenticated } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
+  const { unreadCount } = useNotifications();
 
   const toggleLanguage = () => {
     i18n.changeLanguage(i18n.language === 'en' ? 'mm' : 'en');
@@ -35,6 +37,10 @@ export const Header: React.FC = () => {
               <Link to="/search" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
                 <Search className="h-4 w-4" />
                 {t('nav.search')}
+              </Link>
+              <Link to="/notifications" className="relative inline-flex items-center text-muted-foreground hover:text-foreground" aria-label={t('nav.notifications')} title={t('nav.notifications')}>
+                <Bell className="h-4 w-4" />
+                {unreadCount > 0 && <span className="absolute -right-2 -top-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">{unreadCount > 99 ? '99+' : unreadCount}</span>}
               </Link>
               <Link to={`/profile/${user?.id}`} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                 {t('nav.profile')}

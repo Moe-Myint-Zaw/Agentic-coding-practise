@@ -9,6 +9,7 @@ import type {
   Page,
   Post,
   User,
+  NotificationsResponse,
 } from "@/types";
 
 const LOOPBACK_HOSTS = new Set(["localhost", "127.0.0.1", "0.0.0.0", "::1"]);
@@ -61,7 +62,7 @@ const withReachableHost = (url: string): string => {
 const API_URL = withReachableHost(
   process.env.EXPO_PUBLIC_API_URL ?? `http://${getDevHost()}:3000/api/v1`,
 );
-const API_ORIGIN = API_URL.replace(/\/api\/v1\/?$/, "");
+export const API_ORIGIN = API_URL.replace(/\/api\/v1\/?$/, "");
 
 export const resolveMediaUrl = (url: string): string => {
   if (
@@ -231,4 +232,7 @@ export const api = {
       activeUsers: number;
     }>("/admin/stats"),
   adminUsers: () => request<Page<User & { postCount: number }>>("/admin/users"),
+  notifications: (page = 1) => request<NotificationsResponse>(`/notifications?page=${page}&limit=50`),
+  markNotificationRead: (id: string) => request<{ updated: boolean }>(`/notifications/${id}/read`, { method: 'PATCH' }),
+  markAllNotificationsRead: () => request<{ updatedCount: number }>('/notifications/read-all', { method: 'POST' }),
 };

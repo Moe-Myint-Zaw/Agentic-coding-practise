@@ -1098,7 +1098,7 @@
                     </div>
                 </div>
 
-                <h3>Notifications <span class="future-badge">Future</span></h3>
+                <h3>Notifications <span class="status-badge">Backend implemented</span></h3>
                 <div class="feature-grid">
                     <div class="feature-card">
                         <h5>Real-time Notifications</h5>
@@ -1110,6 +1110,8 @@
                             <li>Notification read/unread status</li>
                             <li>Notification count badge</li>
                             <li>Notification history</li>
+                            <li>WebSocket endpoint: <code>/ws?token=&lt;access-token&gt;</code></li>
+                            <li>REST history/read endpoints under <code>/api/v1/notifications</code></li>
                         </ul>
                     </div>
                     <div class="feature-card">
@@ -1320,26 +1322,19 @@ enum Role {
   @@index([followingId])
 }</div>
 
-                <h3>Notification Model <span class="future-badge">Future</span></h3>
+                                <h3>Notification Model</h3>
                 <div class="code-block">model Notification {
-  id        String           @id @default(cuid())
-  userId    String
-  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  type      NotificationType
-  content   String
-  isRead    Boolean          @default(false)
-  createdAt DateTime         @default(now())
+    id          String    @id @default(cuid())
+    recipientId String
+    actorId     String
+    type        String
+    postId      String?
+    commentId   String?
+    readAt      DateTime?
+    createdAt   DateTime  @default(now())
 
-  @@index([userId])
-  @@index([isRead])
-  @@index([createdAt])
-}
-
-enum NotificationType {
-  LIKE_POST
-  LIKE_COMMENT
-  COMMENT_POST
-  FOLLOW
+    @@index([recipientId, createdAt])
+    @@index([recipientId, readAt])
 }</div>
 
                 <h3>Database Schema Relationships</h3>
@@ -2002,8 +1997,8 @@ Response:
                         <li>Search - Implement user search</li>
                         <li>Add search UI</li>
                         <li>Implement search pagination</li>
-                        <li>Real-time Notifications - Set up WebSocket server</li>
-                        <li>Implement notification system</li>
+                        <li>Real-time Notifications backend - Set up WebSocket server and notification system</li>
+                        <li>Real-time Notifications backend - Add notification history and read status API</li>
                         <li>Create notification UI</li>
                         <li>Add notification preferences</li>
                         <li>Feed Filtering - Implement "Following" feed</li>

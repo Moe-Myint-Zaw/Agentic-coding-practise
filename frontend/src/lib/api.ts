@@ -1,5 +1,5 @@
 import { QueryClient } from '@tanstack/react-query';
-import type { LoginCredentials, RegisterCredentials, AuthTokens, User } from '../types';
+import type { LoginCredentials, RegisterCredentials, AuthTokens, User, NotificationsResponse } from '../types';
 
 export const queryClient = new QueryClient({
   defaultOptions: {
@@ -197,6 +197,24 @@ export const api = {
 
   async getUserLikes(): Promise<any> {
     return authenticatedFetch('/likes/user');
+  },
+
+  async getNotifications(params?: { page?: number; limit?: number }): Promise<NotificationsResponse> {
+    const queryParams = new URLSearchParams();
+    if (params?.page) queryParams.append('page', params.page.toString());
+    if (params?.limit) queryParams.append('limit', params.limit.toString());
+    const response = await authenticatedFetch(`/notifications?${queryParams.toString()}`);
+    return response.data;
+  },
+
+  async markNotificationRead(id: string): Promise<{ updated: boolean }> {
+    const response = await authenticatedFetch(`/notifications/${id}/read`, { method: 'PATCH' });
+    return response.data;
+  },
+
+  async markAllNotificationsRead(): Promise<{ updatedCount: number }> {
+    const response = await authenticatedFetch('/notifications/read-all', { method: 'POST' });
+    return response.data;
   },
 
   // User endpoints

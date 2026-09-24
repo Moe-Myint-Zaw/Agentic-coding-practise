@@ -1,13 +1,18 @@
 import request from 'supertest';
+import WebSocket from 'ws';
+import type { AddressInfo } from 'net';
 import app from '../app';
+import { server } from '../app';
 import prisma from '../config/database';
 
 describe('Auth integration', () => {
   beforeAll(async () => {
     await prisma.user.deleteMany();
+    await new Promise<void>((resolve) => server.listen(0, resolve));
   });
 
   afterAll(async () => {
+    await new Promise<void>((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
     await prisma.$disconnect();
   });
 
@@ -152,5 +157,57 @@ describe('Auth integration', () => {
 
     expect(response.status).toBe(400);
     expect(response.body.error.code).toBe('INVALID_SEARCH_QUERY');
+  });
+
+  it('delivers authenticated follow notifications over WebSocket and exposes read history', async () => {
+    const targetRes = await request(app).post('/api/v1/auth/register').send({
+      email: `notification-target-${Date.now()}@example.com`,
+      username: `nt${Date.now().toString().slice(-8)}`,
+      password: 'password123',
+    });
+    const actorRes = await request(app).post('/api/v1/auth/register').send({
+      email: `notification-actor-${Date.now()}@example.com`,
+      username: `na${Date.now().toString().slice(-8)}`,
+      password: 'password123',
+    });
+    const targetToken = targetRes.body.data.tokens.accessToken;
+    const actorToken = actorRes.body.data.tokens.accessToken;
+    const targetId = targetRes.body.data.user.id;
+    const port = (server.address() as AddressInfo).port;
+    const socket = new WebSocket(`ws://127.0.0.1:${port}/ws?token=${targetToken}`);
+
+    await new Promise<void>((resolve, reject) => {
+      socket.once('open', () => resolve());
+      socket.once('error', reject);
+    });
+    const eventPromise = new Promise<{ data: { type: string; actor: { username: string } } }>((resolve, reject) => {
+      socket.on('message', (message) => {
+        const event = JSON.parse(message.toString());
+        if (event.type === 'notification.created') resolve(event);
+      });
+      socket.once('error', reject);
+    });
+
+    const followRes = await request(app)
+      .post(`/api/v1/users/${targetId}/follow`)
+      .set('Authorization', `Bearer ${actorToken}`);
+    expect(followRes.status).toBe(200);
+
+    const event = await eventPromise;
+    expect(event.data.type).toBe('FOLLOWED');
+    expect(event.data.actor.username).toBe(actorRes.body.data.user.username);
+
+    const historyRes = await request(app)
+      .get('/api/v1/notifications')
+      .set('Authorization', `Bearer ${targetToken}`);
+    expect(historyRes.status).toBe(200);
+    expect(historyRes.body.data.unreadCount).toBe(1);
+    const notificationId = historyRes.body.data.items[0].id;
+
+    const readRes = await request(app)
+      .patch(`/api/v1/notifications/${notificationId}/read`)
+      .set('Authorization', `Bearer ${targetToken}`);
+    expect(readRes.body.data.updated).toBe(true);
+    socket.close();
   });
 });

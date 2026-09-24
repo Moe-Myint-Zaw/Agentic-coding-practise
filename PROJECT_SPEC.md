@@ -262,7 +262,7 @@ As of the current repository state, the project is already beyond a blank scaffo
 - Search comments by content
 - Full-text search implementation
 
-### Notifications (Future)
+### Notifications (Backend implemented)
 
 #### Real-time Notifications
 - WebSocket connection for real-time updates
@@ -272,6 +272,8 @@ As of the current repository state, the project is already beyond a blank scaffo
 - Notification read/unread status
 - Notification count badge
 - Notification history
+
+WebSocket clients connect to `/ws?token=<access-token>` and receive `notification.created` events. REST history is available at `GET /api/v1/notifications`; clients can mark one notification read with `PATCH /api/v1/notifications/:id/read` or all notifications read with `POST /api/v1/notifications/read-all`.
 
 #### Notification Preferences
 - Enable/disable notification types
@@ -458,27 +460,20 @@ model Follow {
 }
 ```
 
-### Notification (Future)
+### Notification
 ```prisma
 model Notification {
-  id        String           @id @default(cuid())
-  userId    String
-  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  type      NotificationType
-  content   String
-  isRead    Boolean          @default(false)
-  createdAt DateTime         @default(now())
+  id          String    @id @default(cuid())
+  recipientId String
+  actorId     String
+  type        String
+  postId      String?
+  commentId   String?
+  readAt      DateTime?
+  createdAt   DateTime  @default(now())
 
-  @@index([userId])
-  @@index([isRead])
-  @@index([createdAt])
-}
-
-enum NotificationType {
-  LIKE_POST
-  LIKE_COMMENT
-  COMMENT_POST
-  FOLLOW
+  @@index([recipientId, createdAt])
+  @@index([recipientId, readAt])
 }
 ```
 
@@ -1039,9 +1034,10 @@ User (1) ----< (N) Notification
   - [ ] Implement user search
   - [ ] Add search UI
   - [ ] Implement search pagination
-- [ ] Real-time Notifications
-  - [ ] Set up WebSocket server
-  - [ ] Implement notification system
+- [x] Real-time Notifications backend
+  - [x] Set up WebSocket server
+  - [x] Implement notification system
+  - [x] Add notification history and read status API
   - [ ] Create notification UI
   - [ ] Add notification preferences
 - [ ] Feed Filtering

@@ -40,6 +40,7 @@
     "@types/multer": "latest",
     "@types/node": "latest",
     "@types/supertest": "latest",
+    "@types/ws": "^8.18.1",
     "eslint": "latest",
     "eslint-config-prettier": "latest",
     "jest": "latest",

@@ -9,6 +9,7 @@
     "logout": "Logout",
     "admin": "Admin",
     "search": "Search"
+    ,"notifications": "Notifications"
   },
   "search": {
     "title": "Find people",
@@ -22,6 +23,19 @@
     "filters": "Feed filter",
     "latest": "Latest",
     "following": "Following"
+  },
+  "notifications": {
+    "eyebrow": "Your activity",
+    "title": "Notifications",
+    "unread": "unread",
+    "markAllRead": "Mark all read",
+    "empty": "You are all caught up.",
+    "messages": {
+      "POST_LIKED": "{{actor}} liked your post.",
+      "COMMENT_LIKED": "{{actor}} liked your comment.",
+      "COMMENT_CREATED": "{{actor}} commented on your post.",
+      "FOLLOWED": "{{actor}} started following you."
+    }
   },
   "auth": {
     "loginTitle": "Sign In",

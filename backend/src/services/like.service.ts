@@ -1,5 +1,6 @@
 import prisma from '../config/database';
 import { ApiError } from '../middleware/error.middleware';
+import { createNotification } from './notification.service';
 
 export const togglePostLike = async (postId: string, userId: string) => {
   const post = await prisma.post.findUnique({ where: { id: postId } });
@@ -17,6 +18,7 @@ export const togglePostLike = async (postId: string, userId: string) => {
   const created = await prisma.like.create({
     data: { userId, postId },
   });
+  await createNotification({ recipientId: post.authorId, actorId: userId, type: 'POST_LIKED', postId });
 
   return { liked: true, likeId: created.id, postId };
 };
@@ -37,6 +39,7 @@ export const toggleCommentLike = async (commentId: string, userId: string) => {
   const created = await prisma.like.create({
     data: { userId, commentId },
   });
+  await createNotification({ recipientId: comment.authorId, actorId: userId, type: 'COMMENT_LIKED', postId: comment.postId, commentId });
 
   return { liked: true, likeId: created.id, commentId };
 };

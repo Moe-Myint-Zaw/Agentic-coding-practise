@@ -1,5 +1,6 @@
 import prisma from '../config/database';
 import { ApiError } from '../middleware/error.middleware';
+import { createNotification } from './notification.service';
 
 export const getCommentsByPost = async (postId: string, page = 1, limit = 10) => {
   const skip = (page - 1) * limit;
@@ -36,6 +37,13 @@ export const createComment = async (input: { content: string; postId: string; us
       authorId: input.userId,
     },
     include: { author: true, likes: true },
+  });
+  await createNotification({
+    recipientId: post.authorId,
+    actorId: input.userId,
+    type: 'COMMENT_CREATED',
+    postId: input.postId,
+    commentId: comment.id,
   });
 
   return serializeComment(comment);

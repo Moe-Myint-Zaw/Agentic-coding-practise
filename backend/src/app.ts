@@ -6,6 +6,8 @@ import { errorMiddleware } from './middleware/error.middleware';
 import env from './config/env';
 import { getPublicCorsOptions } from './config/cors';
 import path from 'path';
+import http from 'http';
+import { attachWebSocketServer } from './realtime/websocket';
 
 dotenv.config();
 
@@ -28,11 +30,14 @@ app.use('/api/v1', apiRoutes);
 app.use(errorMiddleware);
 
 const port = Number(env.PORT || 3000);
+const server = http.createServer(app);
+attachWebSocketServer(server);
 
 if (process.env.NODE_ENV !== 'test') {
-  app.listen(port, '0.0.0.0', () => {
+  server.listen(port, '0.0.0.0', () => {
     console.log(`Yaycha backend running on http://0.0.0.0:${port}`);
   });
 }
 
+export { server };
 export default app;
