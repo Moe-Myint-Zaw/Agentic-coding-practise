@@ -9,6 +9,15 @@ export const notificationQueryKey = ['notifications'];
 export const useNotifications = () => {
   const { tokens } = useAuth();
   const queryClient = useQueryClient();
+
+  const refreshNotifications = async () => {
+    await queryClient.refetchQueries({
+      queryKey: notificationQueryKey,
+      exact: false,
+      type: 'active',
+    });
+  };
+
   const query = useQuery({
     queryKey: notificationQueryKey,
     queryFn: () => api.getNotifications({ page: 1, limit: 50 }),
@@ -24,7 +33,7 @@ export const useNotifications = () => {
       try {
         const message = JSON.parse(event.data) as { type?: string; data?: Notification };
         if (message.type === 'notification.created') {
-          queryClient.invalidateQueries({ queryKey: notificationQueryKey });
+          void refreshNotifications();
         }
       } catch {
         // Ignore malformed socket messages and keep the connection alive.
@@ -35,11 +44,11 @@ export const useNotifications = () => {
 
   const markRead = useMutation({
     mutationFn: api.markNotificationRead,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: notificationQueryKey }),
+    onSuccess: () => { void refreshNotifications(); },
   });
   const markAllRead = useMutation({
     mutationFn: api.markAllNotificationsRead,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: notificationQueryKey }),
+    onSuccess: () => { void refreshNotifications(); },
   });
 
   return { ...query, markRead, markAllRead, unreadCount: query.data?.unreadCount ?? 0 };
