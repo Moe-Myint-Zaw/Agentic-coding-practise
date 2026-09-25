@@ -14,7 +14,7 @@ Android maps `localhost` to the emulator itself. Web and iOS use
 `http://localhost:3000/api/v1`.
 
 On a physical device, set `EXPO_PUBLIC_API_URL` to the development machine's
-LAN address, for example `http://192.168.74.64:3000/api/v1`, and ensure the
+LAN address, for example `http://192.168.1.100:3000/api/v1`, and ensure the
 device and computer are on the same network.
 
 ## Architecture

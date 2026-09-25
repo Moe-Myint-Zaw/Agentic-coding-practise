@@ -12,5 +12,5 @@ export default function RootLayout() {
 }
 function RootNavigator() {
   const { colorScheme } = useTheme();
-  return <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}><StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} /><Stack><Stack.Screen name="(auth)" options={{ headerShown: false }} /><Stack.Screen name="(tabs)" options={{ headerShown: false }} /><Stack.Screen name="post/[id]" options={{ title: 'Post' }} /><Stack.Screen name="admin" options={{ title: 'Admin' }} /></Stack></ThemeProvider>;
+  return <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}><StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} /><Stack><Stack.Screen name="(auth)" options={{ headerShown: false }} /><Stack.Screen name="(tabs)" options={{ headerShown: false }} /><Stack.Screen name="post/[id]" options={{ title: 'Post' }} /><Stack.Screen name="profile/[id]" options={{ title: 'Profile' }} /><Stack.Screen name="admin" options={{ title: 'Admin' }} /></Stack></ThemeProvider>;
 }

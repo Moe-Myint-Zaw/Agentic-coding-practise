@@ -29,7 +29,7 @@ export default function SearchScreen() {
   const renderUser = ({ item }: { item: User }) => (
     <Pressable
       accessibilityRole="button"
-      onPress={() => router.push({ pathname: '/profile', params: { id: item.id } })}
+      onPress={() => router.push({ pathname: '/profile/[id]', params: { id: item.id } })}
       style={styles.result}
     >
       {item.profileImage ? (

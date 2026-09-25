@@ -1,6 +1,6 @@
 import { Image, type ImageStyle } from 'expo-image';
 import { ActivityIndicator, View, type StyleProp } from 'react-native';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 type RemoteImageProps = {
   uri: string;
@@ -11,6 +11,11 @@ type RemoteImageProps = {
 export function RemoteImage({ uri, style, accessibilityLabel }: RemoteImageProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
+
+  useEffect(() => {
+    setIsLoading(true);
+    setHasError(false);
+  }, [uri]);
 
   // Show placeholder if URI is empty or invalid
   if (!uri || hasError) {
@@ -36,6 +41,10 @@ export function RemoteImage({ uri, style, accessibilityLabel }: RemoteImageProps
         source={{ uri }}
         style={{ width: '100%', height: '100%' }}
         transition={150}
+        onLoadStart={() => {
+          setIsLoading(true);
+          setHasError(false);
+        }}
         onLoad={() => setIsLoading(false)}
         onError={(error) => {
           console.log('Image load error:', error, 'URI:', uri);

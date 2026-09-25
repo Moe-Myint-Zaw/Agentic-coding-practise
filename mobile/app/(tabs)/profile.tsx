@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, useSegments } from "expo-router";
 import { SymbolView } from "expo-symbols";
 import * as ImagePicker from "expo-image-picker";
 import { useState } from "react";
@@ -22,8 +22,10 @@ import { api, resolveMediaUrl } from "@/lib/api-client";
 export default function ProfileScreen() {
   const { user } = useAuth();
   const { id } = useLocalSearchParams<{ id?: string | string[] }>();
+  const segments = useSegments();
+  const isStandaloneProfile = segments[0] === "profile";
   const routeProfileId = Array.isArray(id) ? id[0] : id;
-  const profileId = routeProfileId ?? user?.id;
+  const profileId = isStandaloneProfile ? routeProfileId : user?.id;
   const { t } = useLocale();
   const { colors } = useTheme();
   const styles = createStyles(colors);
@@ -72,7 +74,7 @@ export default function ProfileScreen() {
     if (!permission.granted) return;
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ["images"],
-      allowsEditing: true,
+      allowsEditing: false,
       quality: 0.85,
     });
     const asset = result.canceled ? null : result.assets[0];
