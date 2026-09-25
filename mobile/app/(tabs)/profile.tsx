@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocalSearchParams } from "expo-router";
 import { SymbolView } from "expo-symbols";
+import * as ImagePicker from "expo-image-picker";
 import { useState } from "react";
 import {
   ActivityIndicator,
@@ -29,6 +30,9 @@ export default function ProfileScreen() {
   const client = useQueryClient();
   const [displayName, setDisplayName] = useState(user?.displayName ?? "");
   const [bio, setBio] = useState(user?.bio ?? "");
+  const [profileImage, setProfileImage] = useState(user?.profileImage ?? "");
+  const [coverImage, setCoverImage] = useState(user?.coverImage ?? "");
+  const [uploading, setUploading] = useState<"profile" | "cover" | null>(null);
 
   const profile = useQuery({
     queryKey: ["profile", profileId],
@@ -43,7 +47,7 @@ export default function ProfileScreen() {
   });
 
   const update = useMutation({
-    mutationFn: () => api.updateProfile(user!.id, { displayName, bio }),
+    mutationFn: () => api.updateProfile(user!.id, { displayName, bio, profileImage, coverImage }),
     onSuccess: () => client.invalidateQueries({ queryKey: ["user-posts", user?.id] }),
   });
 
@@ -63,15 +67,60 @@ export default function ProfileScreen() {
   const viewedUser = profile.data ?? user;
   const isOwnProfile = profileId === user?.id;
 
+  const pickPhoto = async (type: "profile" | "cover") => {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) return;
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      allowsEditing: true,
+      quality: 0.85,
+    });
+    const asset = result.canceled ? null : result.assets[0];
+    if (!asset) return;
+
+    setUploading(type);
+    try {
+      const uploaded = await api.uploadImage({
+        uri: asset.uri,
+        name: asset.fileName ?? `${type}-photo.jpg`,
+        type: asset.mimeType ?? "image/jpeg",
+      });
+      if (type === "profile") {
+        setProfileImage(uploaded.url);
+        const updated = await api.updateProfile(user!.id, { profileImage: uploaded.url });
+        client.setQueryData(["profile", profileId], (current: typeof viewedUser | undefined) => current ? { ...current, ...updated } : current);
+      } else {
+        setCoverImage(uploaded.url);
+        const updated = await api.updateProfile(user!.id, { coverImage: uploaded.url });
+        client.setQueryData(["profile", profileId], (current: typeof viewedUser | undefined) => current ? { ...current, ...updated } : current);
+      }
+      await client.invalidateQueries({ queryKey: ["profile", profileId] });
+    } finally {
+      setUploading(null);
+    }
+  };
+
   if (!user || !viewedUser) return null;
+
+  const displayedProfileImage = isOwnProfile
+    ? profileImage || viewedUser.profileImage || ""
+    : viewedUser.profileImage || "";
+  const displayedCoverImage = isOwnProfile
+    ? coverImage || viewedUser.coverImage || ""
+    : viewedUser.coverImage || "";
 
   return (
     <View style={styles.page}>
       <View style={styles.hero}>
+        {isOwnProfile ? <Pressable accessibilityRole="button" accessibilityLabel={t("coverPhoto")} onPress={() => pickPhoto("cover")} disabled={uploading !== null} style={styles.coverPhoto}>
+          {displayedCoverImage ? <RemoteImage uri={resolveMediaUrl(displayedCoverImage)} style={styles.coverImage} /> : <Text style={styles.photoPlaceholder}>{t("coverPhoto")}</Text>}
+        </Pressable> : <View style={styles.coverPhoto}>
+          {displayedCoverImage ? <RemoteImage uri={resolveMediaUrl(displayedCoverImage)} style={styles.coverImage} /> : null}
+        </View>}
         <View style={styles.profileHeaderRow}>
-          <View style={styles.avatarWrap}>
-            {viewedUser.profileImage ? (
-              <RemoteImage uri={resolveMediaUrl(viewedUser.profileImage)} style={styles.avatarImage} />
+          {isOwnProfile ? <Pressable accessibilityRole="button" accessibilityLabel={t("profilePhoto")} onPress={() => pickPhoto("profile")} disabled={uploading !== null} style={styles.avatarWrap}>
+            {displayedProfileImage ? (
+              <RemoteImage uri={resolveMediaUrl(displayedProfileImage)} style={styles.avatarImage} />
             ) : (
               <View style={styles.avatarFallback}>
                 <Text style={styles.avatarText}>
@@ -79,7 +128,9 @@ export default function ProfileScreen() {
                 </Text>
               </View>
             )}
-          </View>
+          </Pressable> : <View style={styles.avatarWrap}>
+            {displayedProfileImage ? <RemoteImage uri={resolveMediaUrl(displayedProfileImage)} style={styles.avatarImage} /> : <View style={styles.avatarFallback}><Text style={styles.avatarText}>{(viewedUser.displayName || viewedUser.username).slice(0, 1).toUpperCase()}</Text></View>}
+          </View>}
 
           <View style={styles.metaBlock}>
             <Text style={styles.name}>{viewedUser.displayName || viewedUser.username}</Text>
@@ -264,6 +315,9 @@ const createStyles = (colors: ReturnType<typeof useTheme>["colors"]) =>
       paddingHorizontal: 20,
       paddingVertical: 24,
     },
+    coverPhoto: { alignItems: "center", backgroundColor: colors.surface, borderRadius: 10, height: 120, justifyContent: "center", marginBottom: 16, overflow: "hidden", width: "100%" },
+    coverImage: { height: 120, width: "100%" },
+    photoPlaceholder: { color: colors.mutedText },
     profileHeaderRow: {
       alignItems: "center",
       flexDirection: "row",

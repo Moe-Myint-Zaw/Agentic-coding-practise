@@ -6,6 +6,7 @@ export interface User {
   displayName?: string;
   bio?: string;
   profileImage?: string;
+  coverImage?: string;
   role: 'USER' | 'ADMIN';
   isBanned: boolean;
   createdAt: string;

@@ -46,6 +46,8 @@
   "unfollow": "Unfollow",
   "displayName": "Display name",
   "bio": "Bio",
+    "profilePhoto": "Profile photo",
+    "coverPhoto": "Cover photo",
   "invalidEmail": "Enter a valid email",
   "required": "This field is required",
   "passwordLength": "Password must be at least 8 characters",

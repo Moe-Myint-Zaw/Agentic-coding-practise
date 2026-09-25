@@ -15,6 +15,7 @@ model User {
   displayName   String?
   bio           String?
   profileImage  String?
+  coverImage    String?
   role          String    @default("USER")
   isBanned      Boolean   @default(false)
   createdAt     DateTime  @default(now())

@@ -7,6 +7,7 @@ export interface User {
   displayName?: string | null;
   bio?: string | null;
   profileImage?: string | null;
+  coverImage?: string | null;
   role: 'USER' | 'ADMIN';
   isBanned: boolean;
   createdAt: Date;

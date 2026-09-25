@@ -38,6 +38,7 @@ export const updateProfile = async (req: Request, res: Response, next: NextFunct
       displayName: req.body.displayName,
       bio: req.body.bio,
       profileImage: req.body.profileImage,
+      coverImage: req.body.coverImage,
     });
     res.status(200).json({ success: true, data: result });
   } catch (error) {

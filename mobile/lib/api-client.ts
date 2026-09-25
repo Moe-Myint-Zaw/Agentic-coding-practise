@@ -218,7 +218,7 @@ export const api = {
     request<Page<Post>>(`/users/${id}/posts?page=${page}&limit=20`),
   updateProfile: (
     id: string,
-    input: { displayName?: string; bio?: string; profileImage?: string },
+    input: { displayName?: string; bio?: string; profileImage?: string; coverImage?: string },
   ) =>
     request<User>(`/users/${id}`, {
       method: "PUT",

@@ -50,6 +50,7 @@ export const me = async (req: Request, res: Response, next: NextFunction) => {
         displayName: user.displayName,
         bio: user.bio,
         profileImage: user.profileImage,
+        coverImage: user.coverImage,
         role: user.role,
         isBanned: user.isBanned,
         createdAt: user.createdAt,

@@ -56,6 +56,7 @@ export const getAdminUsers = async (req: Request, res: Response, next: NextFunct
           displayName: u.displayName,
           bio: u.bio,
           profileImage: u.profileImage,
+          coverImage: u.coverImage,
           role: u.role,
           isBanned: u.isBanned,
           createdAt: u.createdAt,

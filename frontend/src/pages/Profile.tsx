@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -15,6 +16,22 @@ export const Profile: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const isOwnProfile = !id || id === currentUser?.id;
   const profileId = id || currentUser?.id;
+  const [profileImage, setProfileImage] = useState(currentUser?.profileImage || '');
+  const [coverImage, setCoverImage] = useState(currentUser?.coverImage || '');
+  const [uploading, setUploading] = useState<'profile' | 'cover' | null>(null);
+
+  const uploadPhoto = async (file: File, type: 'profile' | 'cover') => {
+    setUploading(type);
+    try {
+      const result = await api.uploadImage(file);
+      if (type === 'profile') setProfileImage(result.url);
+      else setCoverImage(result.url);
+      await api.updateUser(currentUser!.id, type === 'profile' ? { profileImage: result.url } : { coverImage: result.url });
+      await queryClient.invalidateQueries({ queryKey: ['user', profileId] });
+    } finally {
+      setUploading(null);
+    }
+  };
 
   const { data: userResponse, isLoading, error } = useQuery({
     queryKey: ['user', profileId],
@@ -61,17 +78,30 @@ export const Profile: React.FC = () => {
 
   const posts = postsData?.data?.items || [];
   const profileLetter = user.displayName?.[0] || user.username?.[0] || '?';
+  const displayedProfileImage = profileImage || user.profileImage || '';
+  const displayedCoverImage = coverImage || user.coverImage || '';
 
   return (
     <div className="max-w-2xl mx-auto">
       <Card className="mb-6">
+        {isOwnProfile ? (
+          <label className="relative block h-36 cursor-pointer overflow-hidden rounded-t-lg bg-muted">
+            {displayedCoverImage ? <img src={resolveMediaUrl(displayedCoverImage)} alt="" className="h-full w-full object-cover" /> : <span className="flex h-full items-center justify-center text-sm text-muted-foreground">{t('profile.coverPhoto')}</span>}
+            <input type="file" accept="image/jpeg,image/png" className="sr-only" disabled={uploading !== null} onChange={(event) => {
+              const file = event.target.files?.[0];
+              if (file) void uploadPhoto(file, 'cover');
+            }} />
+          </label>
+        ) : displayedCoverImage ? (
+          <img src={resolveMediaUrl(displayedCoverImage)} alt="" className="h-36 w-full rounded-t-lg object-cover" />
+        ) : null}
         <CardHeader>
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-4">
-              <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center">
-                {user.profileImage ? (
+              {isOwnProfile ? <label className="relative block h-20 w-20 cursor-pointer rounded-full bg-primary/10">
+                {displayedProfileImage ? (
                   <img
-                    src={resolveMediaUrl(user.profileImage)}
+                    src={resolveMediaUrl(displayedProfileImage)}
                     alt={user.displayName || user.username}
                     className="w-full h-full rounded-full object-cover"
                   />
@@ -80,7 +110,13 @@ export const Profile: React.FC = () => {
                     {profileLetter}
                   </span>
                 )}
-              </div>
+                <input type="file" accept="image/jpeg,image/png" className="sr-only" disabled={uploading !== null} onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  if (file) void uploadPhoto(file, 'profile');
+                }} />
+              </label> : <div className="relative block h-20 w-20 rounded-full bg-primary/10">
+                {displayedProfileImage ? <img src={resolveMediaUrl(displayedProfileImage)} alt={user.displayName || user.username} className="h-full w-full rounded-full object-cover" /> : <span className="text-2xl font-medium">{profileLetter}</span>}
+              </div>}
               <div>
                 <h1 className="text-2xl font-bold">
                   {user.displayName || user.username}

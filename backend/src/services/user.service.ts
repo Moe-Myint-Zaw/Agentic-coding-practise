@@ -26,6 +26,7 @@ export const getUserById = async (id: string, viewerId?: string) => {
     displayName: user.displayName,
     bio: user.bio,
     profileImage: user.profileImage,
+    coverImage: user.coverImage,
     role: user.role,
     isBanned: user.isBanned,
     createdAt: user.createdAt,
@@ -68,7 +69,7 @@ export const unfollowUser = async (followerId: string, followingId: string) => {
   return { following: false, userId: followingId };
 };
 
-export const updateUser = async (id: string, data: { displayName?: string; bio?: string; profileImage?: string }) => {
+export const updateUser = async (id: string, data: { displayName?: string; bio?: string; profileImage?: string; coverImage?: string }) => {
   const existing = await prisma.user.findUnique({ where: { id } });
   if (!existing) throw new ApiError('User not found', 404, 'USER_NOT_FOUND');
 
@@ -78,6 +79,7 @@ export const updateUser = async (id: string, data: { displayName?: string; bio?:
       displayName: data.displayName ?? existing.displayName,
       bio: data.bio ?? existing.bio,
       profileImage: data.profileImage ?? existing.profileImage,
+      coverImage: data.coverImage ?? existing.coverImage,
     },
   });
 
@@ -88,6 +90,7 @@ export const updateUser = async (id: string, data: { displayName?: string; bio?:
     displayName: updated.displayName,
     bio: updated.bio,
     profileImage: updated.profileImage,
+    coverImage: updated.coverImage,
     role: updated.role,
     isBanned: updated.isBanned,
     createdAt: updated.createdAt,
@@ -123,6 +126,7 @@ export const listUsers = async (page = 1, limit = 20, search = '') => {
       displayName: user.displayName,
       bio: user.bio,
       profileImage: user.profileImage,
+      coverImage: user.coverImage,
       role: user.role,
       isBanned: user.isBanned,
       createdAt: user.createdAt,
@@ -156,6 +160,7 @@ export const searchUsers = async (query: string, viewerId: string, page = 1, lim
         displayName: true,
         bio: true,
         profileImage: true,
+        coverImage: true,
         createdAt: true,
         _count: { select: { followers: true, following: true } },
       },
@@ -179,6 +184,7 @@ export const searchUsers = async (query: string, viewerId: string, page = 1, lim
       displayName: user.displayName,
       bio: user.bio,
       profileImage: user.profileImage,
+      coverImage: user.coverImage,
       createdAt: user.createdAt,
       followerCount: user._count.followers,
       followingCount: user._count.following,
