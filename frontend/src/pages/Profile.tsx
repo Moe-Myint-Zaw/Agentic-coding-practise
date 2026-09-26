@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -19,6 +19,9 @@ export const Profile: React.FC = () => {
   const [profileImage, setProfileImage] = useState(currentUser?.profileImage || '');
   const [coverImage, setCoverImage] = useState(currentUser?.coverImage || '');
   const [uploading, setUploading] = useState<'profile' | 'cover' | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [displayName, setDisplayName] = useState('');
+  const [bio, setBio] = useState('');
 
   const uploadPhoto = async (file: File, type: 'profile' | 'cover') => {
     setUploading(type);
@@ -40,6 +43,21 @@ export const Profile: React.FC = () => {
   });
 
   const user = userResponse;
+
+  useEffect(() => {
+    if (user) {
+      setDisplayName(user.displayName || '');
+      setBio(user.bio || '');
+    }
+  }, [user]);
+
+  const updateProfile = useMutation({
+    mutationFn: () => api.updateUser(user!.id, { displayName, bio }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['user', profileId] });
+      setIsEditing(false);
+    },
+  });
 
   const followMutation = useMutation({
     mutationFn: () => user?.isFollowing ? api.unfollowUser(user.id) : api.followUser(user!.id),
@@ -139,9 +157,9 @@ export const Profile: React.FC = () => {
               </Button>
             )}
             {isOwnProfile && (
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" onClick={() => setIsEditing((editing) => !editing)}>
                 <Edit className="h-4 w-4 mr-2" />
-                {t('profile.editProfile')}
+                {isEditing ? t('common.cancel') : t('profile.editProfile')}
               </Button>
             )}
           </div>
@@ -164,6 +182,27 @@ export const Profile: React.FC = () => {
           </div>
         </CardContent>
       </Card>
+
+      {isOwnProfile && isEditing && (
+        <Card className="mb-6">
+          <CardHeader>
+            <h2 className="font-semibold">{t('profile.editProfile')}</h2>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <label className="block space-y-1 text-sm font-medium">
+              {t('auth.displayName')}
+              <input className="w-full rounded-md border border-input bg-background px-3 py-2 font-normal" maxLength={50} value={displayName} onChange={(event) => setDisplayName(event.target.value)} />
+            </label>
+            <label className="block space-y-1 text-sm font-medium">
+              {t('auth.bio')}
+              <textarea className="w-full rounded-md border border-input bg-background px-3 py-2 font-normal" maxLength={160} rows={3} value={bio} onChange={(event) => setBio(event.target.value)} />
+            </label>
+            <Button onClick={() => updateProfile.mutate()} disabled={updateProfile.isPending}>
+              {updateProfile.isPending ? t('common.loading') : t('profile.saveProfile')}
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       <h2 className="text-xl font-bold mb-4">{t('post.posts')}</h2>
 

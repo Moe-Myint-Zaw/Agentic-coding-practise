@@ -35,6 +35,7 @@ export default function ProfileScreen() {
   const [profileImage, setProfileImage] = useState(user?.profileImage ?? "");
   const [coverImage, setCoverImage] = useState(user?.coverImage ?? "");
   const [uploading, setUploading] = useState<"profile" | "cover" | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
 
   const profile = useQuery({
     queryKey: ["profile", profileId],
@@ -50,7 +51,13 @@ export default function ProfileScreen() {
 
   const update = useMutation({
     mutationFn: () => api.updateProfile(user!.id, { displayName, bio, profileImage, coverImage }),
-    onSuccess: () => client.invalidateQueries({ queryKey: ["user-posts", user?.id] }),
+    onSuccess: async () => {
+      await Promise.all([
+        client.invalidateQueries({ queryKey: ["user-posts", user?.id] }),
+        client.invalidateQueries({ queryKey: ["profile", profileId] }),
+      ]);
+      setIsEditing(false);
+    },
   });
 
   const follow = useMutation({
@@ -161,6 +168,9 @@ export default function ProfileScreen() {
               </Pressable>
             )}
           </View>
+          {isOwnProfile ? <Pressable accessibilityRole="button" accessibilityLabel={isEditing ? t("cancel") : t("editProfile")} style={styles.editButton} onPress={() => setIsEditing((editing) => !editing)}>
+            <Text style={styles.editButtonText}>{isEditing ? t("cancel") : t("editProfile")}</Text>
+          </Pressable> : null}
         </View>
 
         <View style={styles.statsRow}>
@@ -170,7 +180,7 @@ export default function ProfileScreen() {
         </View>
       </View>
 
-      {isOwnProfile ? (
+      {isOwnProfile && isEditing ? (
         <View style={styles.form}>
           <TextInput
             style={styles.input}
@@ -392,6 +402,8 @@ const createStyles = (colors: ReturnType<typeof useTheme>["colors"]) =>
       borderRadius: 9,
       padding: 13,
     },
+    editButton: { alignItems: "center", borderColor: colors.border, borderRadius: 8, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 9 },
+    editButtonText: { color: colors.text, fontSize: 12, fontWeight: "700" },
     buttonContent: { alignItems: "center", flexDirection: "row", gap: 7 },
     buttonText: { color: colors.surface, fontWeight: "700" },
     followButton: {

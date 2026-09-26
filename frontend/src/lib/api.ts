@@ -69,20 +69,6 @@ const authenticatedFetch = async (url: string, options: RequestInit = {}, canRef
 };
 
 export const api = {
-  async uploadImage(file: File): Promise<{ url: string }> {
-    const formData = new FormData();
-    formData.append('image', file);
-    const token = getAuthToken();
-    const response = await fetch(`${API_URL}/upload/image`, {
-      method: 'POST',
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-      body: formData,
-    });
-    const body = await response.json();
-    if (!response.ok) throw new Error(body.error?.message || 'Image upload failed');
-    return body.data;
-  },
-
   // Auth endpoints
   async login(credentials: LoginCredentials): Promise<{ tokens: AuthTokens; user: User }> {
     const response = await fetch(`${API_URL}/auth/login`, {
