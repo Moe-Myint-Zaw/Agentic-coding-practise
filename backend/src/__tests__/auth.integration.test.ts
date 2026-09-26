@@ -159,6 +159,59 @@ describe('Auth integration', () => {
     expect(response.body.error.code).toBe('INVALID_SEARCH_QUERY');
   });
 
+  it('searches public post text and profiles while excluding deleted posts and private fields', async () => {
+    const targetRes = await request(app).post('/api/v1/auth/register').send({
+      email: `fulltext-${Date.now()}@example.com`,
+      username: `ft${Date.now().toString().slice(-8)}`,
+      password: 'password123',
+    });
+    const targetId = targetRes.body.data.user.id;
+    await prisma.user.update({ where: { id: targetId }, data: { displayName: 'Cedar Archive' } });
+    const visiblePost = await prisma.post.create({
+      data: { authorId: targetId, content: 'A field guide to cedar forests' },
+    });
+    await prisma.post.create({
+      data: { authorId: targetId, content: 'A deleted cedar field note', isDeleted: true },
+    });
+    await prisma.comment.create({
+      data: { authorId: targetId, postId: visiblePost.id, content: 'Cedar needles smell wonderful' },
+    });
+    await prisma.comment.create({
+      data: { authorId: targetId, postId: visiblePost.id, content: 'A deleted cedar reply', isDeleted: true },
+    });
+    const token = (await request(app).post('/api/v1/auth/login').send({
+      email: 'test@example.com',
+      password: 'password123',
+    })).body.data.tokens.accessToken;
+
+    const response = await request(app)
+      .get('/api/v1/search?q=cedar')
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.posts.items).toEqual([
+      expect.objectContaining({ id: visiblePost.id, content: 'A field guide to cedar forests' }),
+    ]);
+    expect(response.body.data.comments.items).toEqual([
+      expect.objectContaining({ content: 'Cedar needles smell wonderful' }),
+    ]);
+    expect(response.body.data.users.items).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: targetId, displayName: 'Cedar Archive' }),
+    ]));
+    expect(response.body.data.users.items[0].email).toBeUndefined();
+    expect(response.body.data.posts.items[0].author.email).toBeUndefined();
+    expect(response.body.data.comments.items[0].author.email).toBeUndefined();
+
+    const nextPostsPage = await request(app)
+      .get('/api/v1/search?q=cedar&page=1&postsPage=2&commentsPage=2')
+      .set('Authorization', `Bearer ${token}`);
+    expect(nextPostsPage.body.data.users.pagination.page).toBe(1);
+    expect(nextPostsPage.body.data.posts.pagination.page).toBe(2);
+    expect(nextPostsPage.body.data.posts.items).toHaveLength(0);
+    expect(nextPostsPage.body.data.comments.pagination.page).toBe(2);
+    expect(nextPostsPage.body.data.comments.items).toHaveLength(0);
+  });
+
   it('delivers authenticated follow notifications over WebSocket and exposes read history', async () => {
     const targetRes = await request(app).post('/api/v1/auth/register').send({
       email: `notification-target-${Date.now()}@example.com`,

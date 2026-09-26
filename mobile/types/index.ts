@@ -4,6 +4,10 @@ export interface Like { id: string; userId: string; postId?: string | null; comm
 export interface Comment { id: string; content: string; postId: string; authorId: string; author: User; createdAt: string; likes: Like[]; _count: { likes: number }; }
 export interface Post { id: string; content: string; images: string[]; authorId: string; author: User; createdAt: string; comments: Comment[]; likes: Like[]; _count: { comments: number; likes: number }; }
 export interface Page<T> { items: T[]; pagination: { page: number; limit: number; total: number; totalPages: number }; }
+export interface SearchUserResult extends Pick<User, 'id' | 'username' | 'displayName' | 'bio' | 'profileImage' | 'coverImage' | 'createdAt'> { followerCount: number; followingCount: number; isFollowing: boolean; }
+export interface SearchPostResult extends Pick<Post, 'id' | 'content' | 'images' | 'authorId' | 'createdAt'> { author: Pick<User, 'id' | 'username' | 'displayName' | 'profileImage'>; _count: { comments: number; likes: number }; }
+export interface SearchCommentResult extends Pick<Comment, 'id' | 'content' | 'postId' | 'authorId' | 'createdAt'> { author: Pick<User, 'id' | 'username' | 'displayName' | 'profileImage'>; }
+export interface SearchResults { query: string; users: Page<SearchUserResult>; posts: Page<SearchPostResult>; comments: Page<SearchCommentResult>; }
 export type NotificationType = 'POST_LIKED' | 'COMMENT_LIKED' | 'COMMENT_CREATED' | 'FOLLOWED';
 export interface Notification { id: string; type: NotificationType; postId: string | null; commentId: string | null; readAt: string | null; createdAt: string; actor: Pick<User, 'id' | 'username' | 'displayName' | 'profileImage'>; }
 export interface NotificationsResponse { items: Notification[]; unreadCount: number; pagination: Page<Notification>['pagination']; }

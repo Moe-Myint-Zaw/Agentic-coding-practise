@@ -786,7 +786,7 @@
                 </div>
 
                 <h3>Current Implementation Status</h3>
-                <p>The repository already includes a working backend and client setup. The implemented state covers authentication, post and comment management, likes, profile updates, uploads, and admin moderation. The remaining roadmap items below are still future work and remain intentionally unchanged for the next phase.</p>
+                <p>The repository includes a working backend and web/mobile clients. Implemented features cover authentication, post and comment management, likes, profiles, uploads, admin moderation, follow management, feed filtering, user and full-text search, and backend notifications with history/read APIs. Notification preferences and UX polish remain future work.</p>
             </section>
 
             <!-- Project Goals -->
@@ -832,19 +832,20 @@
                             <li>Comments (create and delete comments on posts)</li>
                             <li>Likes & Reactions (toggle like/unlike posts and comments)</li>
                             <li>User Profiles (view profiles, update profile details, list user posts)</li>
-                            <li>User Search (authenticated users can find profiles by username or display name)</li>
+                            <li>Follow System (authenticated users can follow and unfollow other users)</li>
+                            <li>Full-text Search (authenticated users can find public profiles, posts, and comments; the user-only endpoint remains supported)</li>
+                            <li>Feed Filtering (Latest and Following feeds)</li>
+                            <li>Real-time Notifications (WebSocket events and notification history/read APIs)</li>
                             <li>Basic Admin Moderation (stats, user list, content lists, ban actions)</li>
                         </ul>
                     </div>
                     <div class="scope-box future">
                         <h4>🔮 Future Phases</h4>
                         <ul>
-                            <li>Follow System (authenticated follow/unfollow users, follower counts, and follow state)</li>
-                            <li>Real-time Notifications (WebSocket-based notifications)</li>
                             <li>Advanced Privacy Settings</li>
-                            <li>Enhanced Profiles (cover photos, location, website)</li>
+                            <li>Additional Enhanced Profile fields (location and website)</li>
+                            <li>Notification UX enhancements (preferences, in-app toast patterns, notification center polish)</li>
                             <li>Multi-level Comment Threading</li>
-                            <li>Full-text Search</li>
                         </ul>
                     </div>
                 </div>
@@ -1066,39 +1067,46 @@
                     </div>
                 </div>
 
-                <h3>Follow System</h3>
+                <h3>Follow System <span class="status-badge">MVP</span></h3>
                 <div class="feature-grid">
                     <div class="feature-card">
                         <h5>Follow User</h5>
                         <ul>
-                            <li>Follow/unfollow other users</li>
-                            <li>View following/followers count on profiles</li>
-                            <li>View list of following and followers</li>
+                            <li>Authenticated users can follow or unfollow another user</li>
+                            <li>Follow and unfollow operations are idempotent; self-follow is prevented</li>
+                            <li>Profiles display follower/following counts and the viewer's follow state</li>
+                            <li>Following feed filters posts server-side by followed authors</li>
                         </ul>
                     </div>
                 </div>
 
-                <h3>Search <span class="future-badge">Future</span></h3>
+                <h3>Search <span class="status-badge">MVP</span></h3>
                 <div class="feature-grid">
                     <div class="feature-card">
-                        <h5>User Search</h5>
+                        <h5>Full-text Search</h5>
                         <ul>
-                            <li>Search users by username or display name</li>
-                            <li>Display search results with user profiles</li>
-                            <li>Pagination (20 results per page)</li>
+                            <li>Search profiles by username, display name, or bio</li>
+                            <li>Search non-deleted public posts by content</li>
+                            <li>Search non-deleted comments on visible posts by content</li>
+                            <li>Hashtags can be searched as literal content text</li>
+                            <li>Exclude banned users and content authored by banned users</li>
+                            <li>Never expose private account fields in results</li>
+                            <li>Require at least two characters; paginate people, posts, and comments independently</li>
+                            <li>Endpoint: <code>GET /api/v1/search?q=&lt;query&gt;&amp;page=&lt;people-page&gt;&amp;postsPage=&lt;posts-page&gt;&amp;commentsPage=&lt;comments-page&gt;&amp;limit=&lt;limit&gt;</code> (authenticated)</li>
                         </ul>
                     </div>
                     <div class="feature-card">
-                        <h5>Content Search <span class="future-badge">Future</span></h5>
+                        <h5>Search Clients</h5>
                         <ul>
-                            <li>Search posts by content or hashtags</li>
-                            <li>Search comments by content</li>
-                            <li>Full-text search implementation</li>
+                            <li>Web and mobile interfaces with debounced queries</li>
+                            <li>Separate people, post, and comment result sections</li>
+                            <li>Loading, empty, error, and paginated states</li>
+                            <li>Existing user-only search endpoint remains supported</li>
                         </ul>
                     </div>
                 </div>
 
-                <h3>Notifications <span class="status-badge">Backend implemented</span></h3>
+                <h3>Notifications <span class="status-badge">Implemented</span></h3>
                 <div class="feature-grid">
                     <div class="feature-card">
                         <h5>Real-time Notifications</h5>
@@ -1115,7 +1123,7 @@
                         </ul>
                     </div>
                     <div class="feature-card">
-                        <h5>Notification Preferences</h5>
+                        <h5>Notification Preferences <span class="future-badge">Future</span></h5>
                         <ul>
                             <li>Enable/disable notification types</li>
                             <li>Email notifications (optional)</li>
@@ -1505,7 +1513,7 @@ Response:
                 <h3>Mobile Application</h3>
                 <h4>Navigation Structure</h4>
                 <ul>
-                    <li><strong>Tab Navigation:</strong> Feed, Search, Notifications (future), Profile</li>
+                    <li><strong>Tab Navigation:</strong> Feed, Search, Notifications, Profile</li>
                     <li><strong>Stack Navigation:</strong> Post detail, Profile detail, Comments, Settings</li>
                     <li><strong>Modal Navigation:</strong> Create post, Edit profile</li>
                 </ul>
@@ -1852,8 +1860,8 @@ Response:
                 <div class="folder-structure">app/
 ├── (tabs)/             # Tab navigation
 │   ├── feed.tsx
-│   ├── search.tsx      # Future
-│   ├── notifications.tsx # Future
+│   ├── search.tsx      # Search screen
+│   ├── notifications.tsx # Notification history
 │   └── profile.tsx
 ├── (auth)/             # Auth stack
 │   ├── login.tsx
@@ -1991,24 +1999,34 @@ Response:
                 <div class="milestone">
                     <h5>Phase 6: Future Features (Post-MVP)</h5>
                     <ul class="tasks">
-                        <li>Follow System - Implement follow/unfollow functionality</li>
-                        <li>Add follow counts to profiles</li>
-                        <li>Create following/followers lists</li>
-                        <li>Search - Implement user search</li>
-                        <li>Add search UI</li>
-                        <li>Implement search pagination</li>
-                        <li>Real-time Notifications backend - Set up WebSocket server and notification system</li>
-                        <li>Real-time Notifications backend - Add notification history and read status API</li>
-                        <li>Create notification UI</li>
-                        <li>Add notification preferences</li>
-                        <li>Feed Filtering - Implement "Following" feed</li>
-                        <li>Add feed toggle</li>
-                        <li>Optimize feed queries</li>
-                        <li>Advanced Features - Multi-level comment threading</li>
-                        <li>Post editing</li>
-                        <li>Enhanced profiles</li>
-                        <li>Privacy settings</li>
-                        <li>Full-text search</li>
+                        <li>Follow System
+                            <ul>
+                                <li><strong>Implemented</strong>: follow/unfollow functionality and idempotency</li>
+                                <li><strong>Implemented</strong>: follower/following counts and follow state on profiles</li>
+                                <li><strong>Implemented</strong>: Following feed filter</li>
+                            </ul>
+                        </li>
+                        <li>Search
+                            <ul>
+                                <li><strong>Implemented</strong>: profile, post, and comment text search</li>
+                                <li><strong>Implemented</strong>: web and mobile search interfaces</li>
+                                <li><strong>Implemented</strong>: independent pagination for each result type</li>
+                            </ul>
+                        </li>
+                        <li>Real-time Notifications backend
+                            <ul>
+                                <li><strong>Implemented</strong>: WebSocket notifications</li>
+                                <li><strong>Implemented</strong>: notification history and read status API</li>
+                                <li>Notification preferences and UX polish remain future work</li>
+                            </ul>
+                        </li>
+                        <li>Advanced Features
+                            <ul>
+                                <li>Multi-level comment threading</li>
+                                <li>Additional enhanced profile fields</li>
+                                <li>Privacy settings</li>
+                            </ul>
+                        </li>
                     </ul>
                 </div>
             </section>

@@ -49,12 +49,15 @@ A modern, full-stack social media application built with a unified technology st
 
 As of the current repository state, the project is already beyond a blank scaffold and includes the following implemented work:
 
-- Backend API routes for authentication, refresh, current-user lookup, posts, comments, likes, profile updates, image upload, and admin moderation are present.
+- Backend API routes for authentication, refresh, current-user lookup, posts, comments, likes, profile updates, image upload, admin moderation, and unified search are present.
 - User authentication flows include registration, login, JWT issuance, refresh token handling, and protected route enforcement.
 - Post and comment operations support listing, creation, retrieval, owner-only post editing within 24 hours, deletion, and like toggling.
 - User profile and admin endpoints are implemented for viewing profiles, user-specific posts, stats, moderation lists, and banning.
+- Follow management is implemented for authenticated users, including follow/unfollow toggling, follower/following counts, and follow state on profiles.
+- Feed filtering is implemented with `latest` and `following` modes in the web and mobile clients.
+- Notifications are implemented on the backend through WebSocket events and notification history/read APIs; notification preferences and UX polish remain future work.
+- Full-text search is implemented for authenticated users on web and mobile, covering public profiles, non-deleted post text, and comments on visible posts with separate pagination.
 - The web app and Expo mobile app are both present in the workspace and wired to the same backend API contract.
-- User search is implemented for authenticated users on web API and mobile, with paginated matching by username or display name.
 
 ## Project Goals
 
@@ -73,18 +76,17 @@ As of the current repository state, the project is already beyond a blank scaffo
 - Comments (create and delete comments on posts)
 - Likes & Reactions (toggle like/unlike posts and comments)
 - User Profiles (view profiles, update profile details, list user posts)
-- User Search (authenticated users can find profiles by username or display name)
-- Follow system (authenticated users can follow and unfollow other users)
+- Follow System (authenticated users can follow and unfollow other users)
+- User and Full-text Search (authenticated users can find profiles, posts, and comments)
+- Feed Filtering (Latest and Following feeds)
+- Real-time Notifications (WebSocket events and notification history/read APIs)
 - Basic Admin Moderation (stats, user list, content lists, ban actions)
 
 ### Future Phases
-- Follow System (follow/unfollow users)
-- Feed Filtering (Latest and Following feeds)
-- Real-time Notifications (WebSocket-based notifications)
 - Advanced Privacy Settings
-- Enhanced Profiles (cover photos, location, website)
+- Additional Enhanced Profile fields (location and website)
+- Notification UX enhancements (preferences, in-app toast patterns, notification center polish)
 - Multi-level Comment Threading
-- Full-text Search
 
 ## User Roles
 
@@ -239,28 +241,32 @@ As of the current repository state, the project is already beyond a blank scaffo
 - Recent activity feed
 - Quick actions for moderation
 
-### Follow System (Future)
+### Follow System (MVP)
 
 #### Follow User
-- Follow/unfollow other users
-- View following/followers count on profiles
-- View list of following and followers
+- Authenticated users can follow or unfollow another user
+- Following and unfollowing are idempotent; users cannot follow themselves
+- Profiles display follower/following counts and the viewer's follow state
 
 #### Feed Filtering
 - Toggle between "Latest" (all public posts) and "Following" (posts from followed users)
 - Default to "Latest" feed
+- Filter posts server-side by followed authors when "Following" is selected
 
-### Search (Future)
+### Search (MVP)
 
-#### User Search
-- Search users by username or display name
-- Display search results with user profiles
-- Pagination (20 results per page)
-
-#### Content Search (Future)
-- Search posts by content or hashtags
-- Search comments by content
-- Full-text search implementation
+#### Full-text Search
+- Authenticated users can search user profiles by username, display name, or bio
+- Authenticated users can search non-deleted posts by text content
+- Authenticated users can search non-deleted comments on non-deleted posts by text content
+- Hashtags are searchable as literal text in post and comment content
+- Search excludes banned users and content authored by banned users
+- Search results never expose email addresses or other private account fields
+- Queries must contain at least two characters
+- People, post, and comment results are paginated independently, with 20 results per page by default and a maximum of 50
+- Web and mobile clients provide debounced search, separate result sections, empty/error states, and pagination
+- Endpoint: `GET /api/v1/search?q=<query>&page=<people-page>&postsPage=<posts-page>&commentsPage=<comments-page>&limit=<limit>` (authenticated; other page parameters default to `page`)
+- The existing `GET /api/v1/users/search` endpoint remains available for user-only search compatibility
 
 ### Notifications (Backend implemented)
 
@@ -594,7 +600,7 @@ Response:
 ### Web Application
 
 #### Layout Structure
-- **Navigation Bar**: Logo, Search (future), Navigation Links, User Menu, Theme Toggle, Language Switcher
+- **Navigation Bar**: Logo, Search, Navigation Links, User Menu, Theme Toggle, Language Switcher
 - **Main Content Area**: Dynamic content based on route
 - **Mobile Navigation**: Bottom tab bar for mobile view
 
@@ -624,7 +630,7 @@ Response:
 ### Mobile Application
 
 #### Navigation Structure
-- **Tab Navigation**: Feed, Search (future), Notifications (future), Profile
+- **Tab Navigation**: Feed, Search, Notifications, Profile
 - **Stack Navigation**: Post detail, Profile detail, Comments, Settings
 - **Modal Navigation**: Create post, Edit profile
 
@@ -881,8 +887,8 @@ src/
 app/
 ├── (tabs)/             # Tab navigation
 │   ├── feed.tsx
-│   ├── search.tsx      # Future
-│   ├── notifications.tsx # Future
+│   ├── search.tsx      # Search screen
+│   ├── notifications.tsx # Notification history
 │   └── profile.tsx
 ├── (auth)/             # Auth stack
 │   ├── login.tsx
@@ -1026,30 +1032,24 @@ User (1) ----< (N) Notification
   - [ ] Document setup instructions
 
 ### Phase 6: Future Features (Post-MVP)
-- [ ] Follow System
-  - [ ] Implement follow/unfollow functionality
-  - [ ] Add follow counts to profiles
-  - [ ] Create following/followers lists
-- [ ] Search
-  - [ ] Implement user search
-  - [ ] Add search UI
-  - [ ] Implement search pagination
+- [x] Follow System
+  - [x] Implement follow/unfollow functionality
+  - [x] Add follow counts and follow state to profiles
+  - [x] Support following-filtered feeds
+- [x] Search
+  - [x] Search profiles, posts, and comments
+  - [x] Add web and mobile search UI
+  - [x] Paginate each result type independently
 - [x] Real-time Notifications backend
   - [x] Set up WebSocket server
   - [x] Implement notification system
   - [x] Add notification history and read status API
-  - [ ] Create notification UI
+  - [ ] Notification UX polish
   - [ ] Add notification preferences
-- [ ] Feed Filtering
-  - [ ] Implement "Following" feed
-  - [ ] Add feed toggle
-  - [ ] Optimize feed queries
 - [ ] Advanced Features
   - [ ] Multi-level comment threading
-  - [ ] Post editing
-  - [ ] Enhanced profiles
+  - [ ] Additional enhanced profile fields
   - [ ] Privacy settings
-  - [ ] Full-text search
 
 ## Development Guidelines
 

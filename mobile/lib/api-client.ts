@@ -10,6 +10,7 @@ import type {
   Post,
   User,
   NotificationsResponse,
+  SearchResults,
 } from "@/types";
 
 const LOOPBACK_HOSTS = new Set(["localhost", "127.0.0.1", "0.0.0.0", "::1"]);
@@ -212,6 +213,8 @@ export const api = {
   profile: (id: string) => request<User>(`/users/${id}`),
   searchUsers: (query: string, page = 1) =>
     request<Page<User>>(`/users/search?q=${encodeURIComponent(query)}&page=${page}&limit=20`),
+  search: (query: string, peoplePage = 1, postsPage = peoplePage, commentsPage = peoplePage) =>
+    request<SearchResults>(`/search?q=${encodeURIComponent(query)}&page=${peoplePage}&postsPage=${postsPage}&commentsPage=${commentsPage}&limit=20`),
   followUser: (id: string) => request<{ following: boolean; userId: string }>(`/users/${id}/follow`, { method: 'POST' }),
   unfollowUser: (id: string) => request<{ following: boolean; userId: string }>(`/users/${id}/follow`, { method: 'DELETE' }),
   userPosts: (id: string, page = 1) =>

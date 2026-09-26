@@ -167,3 +167,25 @@ export interface NotificationsResponse {
     totalPages: number;
   };
 }
+
+export interface SearchUserResult extends Pick<User, 'id' | 'username' | 'displayName' | 'bio' | 'profileImage' | 'coverImage' | 'createdAt'> {
+  followerCount: number;
+  followingCount: number;
+  isFollowing: boolean;
+}
+
+export interface SearchPostResult extends Pick<Post, 'id' | 'content' | 'images' | 'authorId' | 'createdAt' | 'updatedAt'> {
+  author: Pick<User, 'id' | 'username' | 'displayName' | 'profileImage'>;
+  _count: { comments: number; likes: number };
+}
+
+export interface SearchCommentResult extends Pick<Comment, 'id' | 'content' | 'postId' | 'authorId' | 'createdAt'> {
+  author: Pick<User, 'id' | 'username' | 'displayName' | 'profileImage'>;
+}
+
+export interface SearchResults {
+  query: string;
+  users: PaginatedResponse<SearchUserResult>['data'];
+  posts: PaginatedResponse<SearchPostResult>['data'];
+  comments: PaginatedResponse<SearchCommentResult>['data'];
+}

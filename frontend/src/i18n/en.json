@@ -12,12 +12,23 @@
     ,"notifications": "Notifications"
   },
   "search": {
-    "title": "Find people",
-    "description": "Search for users by username or display name.",
-    "inputLabel": "Search users",
-    "placeholder": "Type a name or username...",
+    "title": "Search",
+    "description": "Find people and public posts.",
+    "inputLabel": "Search people and posts",
+    "placeholder": "Search names, bios, and post text...",
     "loading": "Searching...",
-    "empty": "No users found."
+    "empty": "No matches found.",
+    "people": "People",
+    "posts": "Posts",
+    "comments": "Comments",
+    "noPeople": "No people found.",
+    "noPosts": "No posts found.",
+    "noComments": "No comments found.",
+    "previous": "Previous",
+    "next": "Next",
+    "peoplePage": "People page {{page}} of {{total}}",
+    "postsPage": "Posts page {{page}} of {{total}}",
+    "commentsPage": "Comments page {{page}} of {{total}}"
   },
   "feed": {
     "filters": "Feed filter",

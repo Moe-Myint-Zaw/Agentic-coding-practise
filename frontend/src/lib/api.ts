@@ -1,5 +1,5 @@
 import { QueryClient } from '@tanstack/react-query';
-import type { LoginCredentials, RegisterCredentials, AuthTokens, User, NotificationsResponse } from '../types';
+import type { LoginCredentials, RegisterCredentials, AuthTokens, User, NotificationsResponse, SearchResults } from '../types';
 
 export const queryClient = new QueryClient({
   defaultOptions: {
@@ -228,6 +228,16 @@ export const api = {
     if (params?.page) queryParams.append('page', params.page.toString());
     if (params?.limit) queryParams.append('limit', params.limit.toString());
     const response = await authenticatedFetch(`/users/search?${queryParams.toString()}`);
+    return response.data;
+  },
+
+  async search(query: string, params?: { page?: number; postsPage?: number; commentsPage?: number; limit?: number }): Promise<SearchResults> {
+    const queryParams = new URLSearchParams({ q: query });
+    if (params?.page) queryParams.append('page', params.page.toString());
+    if (params?.postsPage) queryParams.append('postsPage', params.postsPage.toString());
+    if (params?.commentsPage) queryParams.append('commentsPage', params.commentsPage.toString());
+    if (params?.limit) queryParams.append('limit', params.limit.toString());
+    const response = await authenticatedFetch(`/search?${queryParams.toString()}`);
     return response.data;
   },
 
