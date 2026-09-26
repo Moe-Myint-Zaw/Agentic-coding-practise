@@ -58,3 +58,19 @@ const authenticateSocket = (request: IncomingMessage): JWTPayload | null => {
     return null;
   }
 };
+
+export type ContentUpdate = {
+  resource: 'post' | 'comment' | 'post-like' | 'comment-like';
+  action: 'created' | 'updated' | 'deleted' | 'liked' | 'unliked';
+  postId: string;
+  commentId?: string;
+};
+
+export const broadcastContentUpdate = (update: ContentUpdate) => {
+  const payload = JSON.stringify({ type: 'content.updated', data: update });
+  for (const userConnections of connections.values()) {
+    for (const client of userConnections) {
+      if (client.readyState === WebSocket.OPEN) client.send(payload);
+    }
+  }
+};

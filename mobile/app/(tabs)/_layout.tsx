@@ -24,8 +24,17 @@ export default function TabLayout() {
       socket = new WebSocket(`${protocol}//${origin.host}/ws?token=${encodeURIComponent(token)}`);
       socket.onmessage = (event) => {
         try {
-          if (JSON.parse(event.data).type === 'notification.created') {
+          const message = JSON.parse(event.data);
+          if (message.type === 'notification.created') {
             client.invalidateQueries({ queryKey: ['notifications'] });
+          } else if (message.type === 'content.updated' && message.data?.postId) {
+            const { postId } = message.data;
+            client.invalidateQueries({ queryKey: ['posts'] });
+            client.invalidateQueries({ queryKey: ['user-posts'] });
+            client.invalidateQueries({ queryKey: ['profile'] });
+            client.invalidateQueries({ queryKey: ['search'] });
+            client.invalidateQueries({ queryKey: ['post', postId] });
+            client.invalidateQueries({ queryKey: ['comments', postId] });
           }
         } catch {
           // Ignore malformed socket messages.

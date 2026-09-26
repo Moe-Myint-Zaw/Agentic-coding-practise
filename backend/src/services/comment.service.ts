@@ -1,6 +1,7 @@
 import prisma from '../config/database';
 import { ApiError } from '../middleware/error.middleware';
 import { createNotification } from './notification.service';
+import { broadcastContentUpdate } from '../realtime/websocket';
 
 export const getCommentsByPost = async (postId: string, page = 1, limit = 10) => {
   const skip = (page - 1) * limit;
@@ -38,6 +39,7 @@ export const createComment = async (input: { content: string; postId: string; us
     },
     include: { author: true, likes: true },
   });
+  broadcastContentUpdate({ resource: 'comment', action: 'created', postId: input.postId, commentId: comment.id });
   await createNotification({
     recipientId: post.authorId,
     actorId: input.userId,
@@ -62,6 +64,7 @@ export const deleteComment = async (id: string, userId: string, userRole: 'USER'
     data: { isDeleted: true, deletedAt: new Date(), deletedBy: userId },
   });
 
+  broadcastContentUpdate({ resource: 'comment', action: 'deleted', postId: comment.postId, commentId: id });
   return { deleted: true };
 };
 

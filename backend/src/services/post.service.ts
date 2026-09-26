@@ -1,5 +1,6 @@
 import prisma from '../config/database';
 import { ApiError } from '../middleware/error.middleware';
+import { broadcastContentUpdate } from '../realtime/websocket';
 
 export type FeedType = 'latest' | 'following';
 
@@ -65,6 +66,7 @@ export const createPost = async (input: { content: string; images?: string[]; us
     include: { author: true, comments: true, likes: true },
   });
 
+  broadcastContentUpdate({ resource: 'post', action: 'created', postId: post.id });
   return serializePost(post);
 };
 
@@ -81,6 +83,7 @@ export const deletePost = async (id: string, userId: string, userRole: 'USER' | 
     data: { isDeleted: true, deletedAt: new Date(), deletedBy: userId },
   });
 
+  broadcastContentUpdate({ resource: 'post', action: 'deleted', postId: id });
   return { deleted: true };
 };
 
@@ -110,6 +113,7 @@ export const updatePost = async (
     include: { author: true, comments: true, likes: true },
   });
 
+  broadcastContentUpdate({ resource: 'post', action: 'updated', postId: id });
   return serializePost(updatedPost);
 };
 

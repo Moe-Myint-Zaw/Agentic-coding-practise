@@ -6,6 +6,11 @@ import type { Notification } from '../types';
 
 export const notificationQueryKey = ['notifications'];
 
+interface ContentUpdateMessage {
+  postId: string;
+  commentId?: string;
+}
+
 export const useNotifications = () => {
   const { tokens } = useAuth();
   const queryClient = useQueryClient();
@@ -34,6 +39,16 @@ export const useNotifications = () => {
         const message = JSON.parse(event.data) as { type?: string; data?: Notification };
         if (message.type === 'notification.created') {
           void refreshNotifications();
+        } else if (message.type === 'content.updated' && message.data && 'postId' in message.data) {
+          const update = message.data as ContentUpdateMessage;
+          void Promise.all([
+            queryClient.invalidateQueries({ queryKey: ['posts'] }),
+            queryClient.invalidateQueries({ queryKey: ['userPosts'] }),
+            queryClient.invalidateQueries({ queryKey: ['search'] }),
+            queryClient.invalidateQueries({ queryKey: ['user'] }),
+          ]);
+          void queryClient.invalidateQueries({ queryKey: ['post', update.postId] });
+          void queryClient.invalidateQueries({ queryKey: ['postComments', update.postId] });
         }
       } catch {
         // Ignore malformed socket messages and keep the connection alive.

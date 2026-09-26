@@ -52,6 +52,7 @@ As of the current repository state, the project is already beyond a blank scaffo
 - Backend API routes for authentication, refresh, current-user lookup, posts, comments, likes, profile updates, image upload, admin moderation, and unified search are present.
 - User authentication flows include registration, login, JWT issuance, refresh token handling, and protected route enforcement.
 - Post and comment operations support listing, creation, retrieval, owner-only post editing within 24 hours, deletion, and like toggling.
+- Real-time content updates are broadcast to all connected authenticated users for post and comment creation, updates/deletion, and post/comment like toggles; web and mobile refresh affected views through React Query.
 - User profile and admin endpoints are implemented for viewing profiles, user-specific posts, stats, moderation lists, and banning.
 - Follow management is implemented for authenticated users, including follow/unfollow toggling, follower/following counts, and follow state on profiles.
 - Feed filtering is implemented with `latest` and `following` modes in the web and mobile clients.
@@ -75,6 +76,7 @@ As of the current repository state, the project is already beyond a blank scaffo
 - Post Management (create, view, delete posts with text and images)
 - Comments (create and delete comments on posts)
 - Likes & Reactions (toggle like/unlike posts and comments)
+- Real-time Content Updates (WebSocket updates for posts, comments, and likes across connected authenticated users)
 - User Profiles (view profiles, update profile details, list user posts)
 - Follow System (authenticated users can follow and unfollow other users)
 - User and Full-text Search (authenticated users can find profiles, posts, and comments)
@@ -197,6 +199,14 @@ As of the current repository state, the project is already beyond a blank scaffo
 - Prevent duplicate likes
 - Real-time like count updates
 - Track which comments user has liked
+
+### Real-time Content Updates (MVP)
+
+- Authenticated clients connect to `/ws?token=<access-token>`
+- Broadcast `content.updated` to all connected authenticated users after successful post/comment creation, post updates/deletion, comment deletion, and post/comment like or unlike actions
+- Events include a resource kind, action, post ID, and optional comment ID; full content and private account data are not broadcast
+- Existing `notification.created` events remain recipient-specific and are sent separately
+- Web and mobile clients invalidate affected feed, profile, post detail, comment, and search queries when a content event arrives
 
 ### User Profiles (MVP)
 

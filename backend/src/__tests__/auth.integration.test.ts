@@ -263,4 +263,84 @@ describe('Auth integration', () => {
     expect(readRes.body.data.updated).toBe(true);
     socket.close();
   });
+
+  it('broadcasts post, comment, and like updates to every connected user', async () => {
+    const actorRes = await request(app).post('/api/v1/auth/register').send({
+      email: `content-actor-${Date.now()}@example.com`,
+      username: `ca${Date.now().toString().slice(-8)}`,
+      password: 'password123',
+    });
+    const observerRes = await request(app).post('/api/v1/auth/register').send({
+      email: `content-observer-${Date.now()}@example.com`,
+      username: `co${Date.now().toString().slice(-8)}`,
+      password: 'password123',
+    });
+    const port = (server.address() as AddressInfo).port;
+    const sockets = [actorRes, observerRes].map((response) =>
+      new WebSocket(`ws://127.0.0.1:${port}/ws?token=${response.body.data.tokens.accessToken}`),
+    );
+    await Promise.all(sockets.map((socket) => new Promise<void>((resolve, reject) => {
+      socket.once('open', resolve);
+      socket.once('error', reject);
+    })));
+
+    const nextContentEvent = (socket: WebSocket) => new Promise<{ data: { resource: string; action: string; postId: string } }>((resolve) => {
+      const onMessage = (message: WebSocket.RawData) => {
+        const event = JSON.parse(message.toString());
+        if (event.type !== 'content.updated') return;
+        socket.off('message', onMessage);
+        resolve(event);
+      };
+      socket.on('message', onMessage);
+    });
+    const expectBroadcast = async (action: () => Promise<request.Response>, resource: string, expectedAction: string) => {
+      const events = sockets.map(nextContentEvent);
+      const response = await action();
+      expect(response.status).toBeGreaterThanOrEqual(200);
+      expect(response.status).toBeLessThan(300);
+      const received = await Promise.all(events);
+      for (const event of received) {
+        expect(event.data.resource).toBe(resource);
+        expect(event.data.action).toBe(expectedAction);
+      }
+      return response;
+    };
+
+    try {
+      const postRes = await expectBroadcast(
+        () => request(app).post('/api/v1/posts').set('Authorization', `Bearer ${actorRes.body.data.tokens.accessToken}`).send({ content: 'Realtime post' }),
+        'post',
+        'created',
+      );
+      const postId = postRes.body.data.id;
+      const commentRes = await expectBroadcast(
+        () => request(app).post('/api/v1/comments').set('Authorization', `Bearer ${observerRes.body.data.tokens.accessToken}`).send({ postId, content: 'Realtime comment' }),
+        'comment',
+        'created',
+      );
+      const commentId = commentRes.body.data.id;
+      await expectBroadcast(
+        () => request(app).post(`/api/v1/likes/post/${postId}`).set('Authorization', `Bearer ${observerRes.body.data.tokens.accessToken}`),
+        'post-like',
+        'liked',
+      );
+      await expectBroadcast(
+        () => request(app).post(`/api/v1/likes/post/${postId}`).set('Authorization', `Bearer ${observerRes.body.data.tokens.accessToken}`),
+        'post-like',
+        'unliked',
+      );
+      await expectBroadcast(
+        () => request(app).post(`/api/v1/likes/comment/${commentId}`).set('Authorization', `Bearer ${actorRes.body.data.tokens.accessToken}`),
+        'comment-like',
+        'liked',
+      );
+      await expectBroadcast(
+        () => request(app).post(`/api/v1/likes/comment/${commentId}`).set('Authorization', `Bearer ${actorRes.body.data.tokens.accessToken}`),
+        'comment-like',
+        'unliked',
+      );
+    } finally {
+      sockets.forEach((socket) => socket.close());
+    }
+  });
 });

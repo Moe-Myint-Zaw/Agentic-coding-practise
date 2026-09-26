@@ -1,6 +1,7 @@
 import prisma from '../config/database';
 import { ApiError } from '../middleware/error.middleware';
 import { createNotification } from './notification.service';
+import { broadcastContentUpdate } from '../realtime/websocket';
 
 export const togglePostLike = async (postId: string, userId: string) => {
   const post = await prisma.post.findUnique({ where: { id: postId } });
@@ -12,12 +13,14 @@ export const togglePostLike = async (postId: string, userId: string) => {
 
   if (existing) {
     await prisma.like.delete({ where: { id: existing.id } });
+    broadcastContentUpdate({ resource: 'post-like', action: 'unliked', postId });
     return { liked: false, postId };
   }
 
   const created = await prisma.like.create({
     data: { userId, postId },
   });
+  broadcastContentUpdate({ resource: 'post-like', action: 'liked', postId });
   await createNotification({ recipientId: post.authorId, actorId: userId, type: 'POST_LIKED', postId });
 
   return { liked: true, likeId: created.id, postId };
@@ -33,12 +36,14 @@ export const toggleCommentLike = async (commentId: string, userId: string) => {
 
   if (existing) {
     await prisma.like.delete({ where: { id: existing.id } });
+    broadcastContentUpdate({ resource: 'comment-like', action: 'unliked', postId: comment.postId, commentId });
     return { liked: false, commentId };
   }
 
   const created = await prisma.like.create({
     data: { userId, commentId },
   });
+  broadcastContentUpdate({ resource: 'comment-like', action: 'liked', postId: comment.postId, commentId });
   await createNotification({ recipientId: comment.authorId, actorId: userId, type: 'COMMENT_LIKED', postId: comment.postId, commentId });
 
   return { liked: true, likeId: created.id, commentId };

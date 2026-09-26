@@ -786,7 +786,7 @@
                 </div>
 
                 <h3>Current Implementation Status</h3>
-                <p>The repository includes a working backend and web/mobile clients. Implemented features cover authentication, post and comment management, likes, profiles, uploads, admin moderation, follow management, feed filtering, user and full-text search, and backend notifications with history/read APIs. Notification preferences and UX polish remain future work.</p>
+                <p>The repository includes a working backend and web/mobile clients. Implemented features cover authentication, post and comment management, likes, profiles, uploads, admin moderation, follow management, feed filtering, user and full-text search, backend notifications with history/read APIs, and WebSocket content updates for connected authenticated users. Notification preferences and UX polish remain future work.</p>
             </section>
 
             <!-- Project Goals -->
@@ -831,6 +831,7 @@
                             <li>Post Management (create, view, delete posts with text and images)</li>
                             <li>Comments (create and delete comments on posts)</li>
                             <li>Likes & Reactions (toggle like/unlike posts and comments)</li>
+                            <li>Real-time Content Updates (WebSocket updates for posts, comments, and likes across connected authenticated users)</li>
                             <li>User Profiles (view profiles, update profile details, list user posts)</li>
                             <li>Follow System (authenticated users can follow and unfollow other users)</li>
                             <li>Full-text Search (authenticated users can find public profiles, posts, and comments; the user-only endpoint remains supported)</li>
@@ -1009,6 +1010,27 @@
                             <li>Prevent duplicate likes</li>
                             <li>Real-time like count updates</li>
                             <li>Track which comments user has liked</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <h3>Real-time Content Updates (MVP)</h3>
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <h5>WebSocket Events</h5>
+                        <ul>
+                            <li>Authenticated clients connect to <code>/ws?token=&lt;access-token&gt;</code></li>
+                            <li>Broadcast <code>content.updated</code> to all connected authenticated users after post/comment creation, post updates/deletion, comment deletion, and post/comment like or unlike actions</li>
+                            <li>Events include resource, action, post ID, and optional comment ID; post/comment bodies and private account data are not broadcast</li>
+                            <li>Existing <code>notification.created</code> events remain recipient-specific</li>
+                        </ul>
+                    </div>
+                    <div class="feature-card">
+                        <h5>Client Updates</h5>
+                        <ul>
+                            <li>Web and mobile clients refresh affected feeds and profile posts</li>
+                            <li>Open post details and comments refresh when their post changes</li>
+                            <li>Search results refresh after content changes</li>
                         </ul>
                     </div>
                 </div>

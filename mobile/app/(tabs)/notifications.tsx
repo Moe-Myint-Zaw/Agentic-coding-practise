@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { router } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
@@ -6,8 +5,7 @@ import { SymbolView } from 'expo-symbols';
 import { useAuth } from '@/contexts/auth-context';
 import { useLocale } from '@/contexts/locale-context';
 import { useTheme } from '@/contexts/theme-context';
-import { authStorage } from '@/lib/auth-storage';
-import { api, API_ORIGIN } from '@/lib/api-client';
+import { api } from '@/lib/api-client';
 import type { Notification } from '@/types';
 
 export default function NotificationsScreen() {
@@ -19,23 +17,6 @@ export default function NotificationsScreen() {
   const notifications = useQuery({ queryKey: ['notifications'], queryFn: () => api.notifications(1), enabled: Boolean(user) });
   const markRead = useMutation({ mutationFn: api.markNotificationRead, onSuccess: () => client.invalidateQueries({ queryKey: ['notifications'] }) });
   const markAllRead = useMutation({ mutationFn: api.markAllNotificationsRead, onSuccess: () => client.invalidateQueries({ queryKey: ['notifications'] }) });
-
-  useEffect(() => {
-    let socket: WebSocket | null = null;
-    let active = true;
-    authStorage.getAccessToken().then((token) => {
-      if (!active || !token) return;
-      const origin = new URL(API_ORIGIN);
-      const protocol = origin.protocol === 'https:' ? 'wss:' : 'ws:';
-      socket = new WebSocket(`${protocol}//${origin.host}/ws?token=${encodeURIComponent(token)}`);
-      socket.onmessage = (event) => {
-        try {
-          if (JSON.parse(event.data).type === 'notification.created') client.invalidateQueries({ queryKey: ['notifications'] });
-        } catch { /* Ignore malformed socket messages. */ }
-      };
-    });
-    return () => { active = false; socket?.close(); };
-  }, [client, user?.id]);
 
   const renderItem = ({ item }: { item: Notification }) => {
     const actor = item.actor.displayName || item.actor.username;

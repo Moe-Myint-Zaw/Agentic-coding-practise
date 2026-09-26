@@ -65,4 +65,24 @@ describe('useNotifications', () => {
       );
     });
   });
+
+  it('invalidates shared content queries when a content update arrives', async () => {
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries').mockResolvedValue();
+    const TestComponent = () => {
+      useNotifications();
+      return null;
+    };
+
+    render(<QueryClientProvider client={queryClient}><TestComponent /></QueryClientProvider>);
+    const socket = MockWebSocket.instances[0];
+    socket.onmessage?.({ data: JSON.stringify({ type: 'content.updated', data: { resource: 'comment', action: 'created', postId: 'post-1', commentId: 'comment-1', actorId: 'user-2' } }) } as MessageEvent);
+
+    await waitFor(() => {
+      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['posts'] });
+      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['post', 'post-1'] });
+      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['postComments', 'post-1'] });
+      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['search'] });
+    });
+  });
 });
