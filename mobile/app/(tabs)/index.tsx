@@ -19,6 +19,7 @@ import {
   View,
 } from 'react-native';
 import { RemoteImage } from '@/components/remote-image';
+import { ScreenFrame } from '@/components/screen-frame';
 import { api, ApiError, postsByFeed, resolveMediaUrl } from '@/lib/api-client';
 import { useAuth } from '@/contexts/auth-context';
 import { useLocale } from '@/contexts/locale-context';
@@ -128,6 +129,7 @@ export default function FeedScreen() {
   };
 
   return (
+    <ScreenFrame edges={['top', 'left', 'right']} keyboardAware>
     <View style={styles.page}>
       <View style={styles.header}>
         <Text style={styles.title}>{t('appName')}</Text>
@@ -218,6 +220,9 @@ export default function FeedScreen() {
         <FlatList
           data={feed.data?.items ?? []}
           keyExtractor={(item) => item.id}
+          contentInsetAdjustmentBehavior="never"
+          keyboardDismissMode="on-drag"
+          keyboardShouldPersistTaps="handled"
           refreshControl={<RefreshControl refreshing={feed.isRefetching} onRefresh={() => feed.refetch()} />}
           ListEmptyComponent={<Text style={styles.empty}>{t('emptyFeed')}</Text>}
           renderItem={({ item }) => (
@@ -236,6 +241,7 @@ export default function FeedScreen() {
         />
       )}
     </View>
+    </ScreenFrame>
   );
 }
 

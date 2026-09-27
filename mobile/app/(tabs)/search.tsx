@@ -3,6 +3,7 @@ import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { RemoteImage } from '@/components/remote-image';
+import { ScreenFrame } from '@/components/screen-frame';
 import { useLocale } from '@/contexts/locale-context';
 import { useTheme } from '@/contexts/theme-context';
 import { api, resolveMediaUrl } from '@/lib/api-client';
@@ -33,6 +34,7 @@ export default function SearchScreen() {
   const comments = results.data?.comments.items ?? [];
 
   return (
+    <ScreenFrame edges={['top', 'left', 'right']} keyboardAware>
     <View style={styles.container}>
       <Text style={styles.heading}>{t('search')}</Text>
       <TextInput
@@ -48,7 +50,7 @@ export default function SearchScreen() {
       {results.isFetching ? <ActivityIndicator color={colors.tint} style={styles.loader} /> : null}
       {results.isError ? <Pressable accessibilityRole="button" onPress={() => results.refetch()}><Text style={styles.empty}>{t('networkError')} · {t('retry')}</Text></Pressable> : null}
       {query.length >= 2 && !results.isFetching && users.length === 0 && posts.length === 0 && comments.length === 0 && !results.isError ? <Text style={styles.empty}>{t('searchEmpty')}</Text> : null}
-      {query.length >= 2 && !results.isError ? <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.results}>
+      {query.length >= 2 && !results.isError ? <ScrollView contentInsetAdjustmentBehavior="never" keyboardDismissMode="on-drag" keyboardShouldPersistTaps="handled" contentContainerStyle={styles.results}>
         <Text style={styles.sectionHeading}>{t('searchPeople')}</Text>
         {users.length === 0 ? <Text style={styles.emptySection}>{t('searchNoPeople')}</Text> : users.map((item) => (
           <Pressable key={item.id} accessibilityRole="button" onPress={() => router.push({ pathname: '/profile/[id]', params: { id: item.id } })} style={styles.result}>
@@ -93,6 +95,7 @@ export default function SearchScreen() {
         </View> : null}
       </ScrollView> : null}
     </View>
+    </ScreenFrame>
   );
 }
 

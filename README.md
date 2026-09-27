@@ -12,6 +12,14 @@ The repository contains three independently runnable applications:
 
 The clients communicate with the backend over HTTP. The backend uses SQLite for local development and is structured for PostgreSQL in production. Client query caches are invalidated after mutations so feeds, posts, comments, and profiles stay current.
 
+## Current Implementation Status
+
+- The backend provides authentication, post and comment APIs, likes, uploads, profiles, follow management, search, admin moderation, notifications, and real-time content updates.
+- Comments support multi-level replies. Web and mobile clients can expand and paginate replies at each level.
+- Web and Expo mobile clients include feed, post detail, profile, authentication, search, notifications, settings, and admin screens.
+- Mobile screens use safe-area insets; input screens are keyboard-aware, and the post detail body scrolls independently from its comment composer.
+- Remaining roadmap work is still tracked in `PROJECT_SPEC.md` and `PROJECT_SPEC.html`.
+
 ## Technology Stack
 
 - TypeScript across all applications

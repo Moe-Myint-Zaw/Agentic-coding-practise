@@ -8,7 +8,7 @@ import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader } from '../components/ui/card';
 import { Input } from '../components/ui/input';
 import { useAuth } from '../contexts/AuthContext';
-import { Heart, MessageCircle, Share2, MoreHorizontal, Trash2, Send, Pencil, Check, X } from 'lucide-react';
+import { Heart, MessageCircle, Share2, MoreHorizontal, Trash2, Send, Pencil, Check, X, Reply, ChevronDown, ChevronUp } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import type { Comment } from '../types';
 import { resolveMediaUrl } from '../lib/api';
@@ -34,14 +34,15 @@ export const PostDetail: React.FC = () => {
     (comment: Comment) => comment.postId === id
   );
 
-  const handleCreateComment = async () => {
-    if (!newComment.trim() || !id) return;
+  const handleCreateComment = async (parentId?: string, content = newComment) => {
+    if (!content.trim() || !id) return;
 
     try {
-      await createComment.mutateAsync({ postId: id, content: newComment });
-      setNewComment('');
+      await createComment.mutateAsync({ postId: id, content, parentId });
+      if (!parentId) setNewComment('');
     } catch (error) {
       console.error('Failed to create comment:', error);
+      throw error;
     }
   };
 
@@ -197,7 +198,7 @@ export const PostDetail: React.FC = () => {
                   </span>
                   <Button
                     size="sm"
-                    onClick={handleCreateComment}
+                    onClick={() => handleCreateComment()}
                     disabled={!newComment.trim() || createComment.isPending}
                   >
                     <Send className="h-4 w-4 mr-2" />
@@ -218,11 +219,70 @@ export const PostDetail: React.FC = () => {
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-4">
-            {comments.map((comment: any) => (
-              <Card key={comment.id}>
-                <CardContent className="pt-4">
-                  <div className="flex items-start gap-3">
+          <div className="space-y-3">
+            {comments.map((comment: Comment) => (
+              <CommentThreadItem
+                key={comment.id}
+                comment={comment}
+                postId={id!}
+                depth={0}
+                onReply={handleCreateComment}
+                onLike={handleLikeComment}
+                onDelete={handleDeleteComment}
+                isLiking={toggleCommentLike.isPending}
+                isDeleting={deleteComment.isPending}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+interface CommentThreadItemProps {
+  comment: Comment;
+  postId: string;
+  depth: number;
+  onReply: (parentId: string, content: string) => Promise<void>;
+  onLike: (commentId: string) => Promise<void>;
+  onDelete: (commentId: string) => Promise<void>;
+  isLiking: boolean;
+  isDeleting: boolean;
+}
+
+const CommentThreadItem: React.FC<CommentThreadItemProps> = ({ comment, postId, depth, onReply, onLike, onDelete, isLiking, isDeleting }) => {
+  const { t } = useTranslation();
+  const { user } = useAuth();
+  const [replyText, setReplyText] = useState('');
+  const [replying, setReplying] = useState(false);
+  const [repliesOpen, setRepliesOpen] = useState(false);
+  const [repliesPage, setRepliesPage] = useState(1);
+  const { data: replyResponse, isLoading: repliesLoading } = usePostComments(postId, {
+    page: repliesPage,
+    limit: 20,
+    parentId: comment.id,
+    enabled: repliesOpen,
+  });
+  const replies = (replyResponse?.data?.items || []) as Comment[];
+  const replyPagination = replyResponse?.data?.pagination;
+  const liked = comment.likes?.some((like) => like.userId === user?.id) ?? false;
+
+  const submitReply = async () => {
+    if (!replyText.trim()) return;
+    try {
+      await onReply(comment.id, replyText);
+      setReplyText('');
+      setReplying(false);
+      setRepliesOpen(true);
+    } catch {
+      // Keep the reply draft available for retry.
+    }
+  };
+
+  return (
+    <article className="border-l-2 border-border/70 pl-3 py-2" style={{ marginLeft: Math.min(depth, 4) * 12 }}>
+      <div className="flex items-start gap-3">
                     {comment.author ? (
                       <Link to={`/profile/${comment.author.id}`}>
                         <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
@@ -244,7 +304,7 @@ export const PostDetail: React.FC = () => {
                         <span className="text-sm font-medium">?</span>
                       </div>
                     )}
-                    <div className="flex-1">
+                    <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-1">
                         {comment.author ? (
                           <Link to={`/profile/${comment.author.id}`}>
@@ -256,12 +316,12 @@ export const PostDetail: React.FC = () => {
                           <p className="font-medium text-sm hover:underline">Unknown user</p>
                         )}
                         <div className="flex items-center gap-2">
-                          {comment.authorId === user?.id && (
+                          {comment.authorId === user?.id && !comment.isDeleted && (
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={() => handleDeleteComment(comment.id)}
-                              disabled={deleteComment.isPending}
+                              onClick={() => onDelete(comment.id)}
+                              disabled={isDeleting}
                             >
                               <Trash2 className="h-3 w-3 text-destructive" />
                             </Button>
@@ -269,28 +329,55 @@ export const PostDetail: React.FC = () => {
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => handleLikeComment(comment.id)}
-                            disabled={toggleCommentLike.isPending}
+                            onClick={() => onLike(comment.id)}
+                            disabled={isLiking || comment.isDeleted}
                           >
-                            <Heart className="h-3 w-3" />
+                            <Heart className={`h-3 w-3 ${liked ? 'fill-current text-red-500' : ''}`} />
                           </Button>
                           <span className="text-xs text-muted-foreground">
                             {comment._count?.likes || 0}
                           </span>
                         </div>
                       </div>
-                      <p className="text-sm">{comment.content}</p>
+                      <p className="text-sm">{comment.isDeleted ? t('comment.deletedComment') : comment.content}</p>
                       <p className="text-xs text-muted-foreground mt-1">
                         {new Date(comment.createdAt).toLocaleString()}
                       </p>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
+                    {!comment.isDeleted && (
+                      <div className="mt-2 flex flex-wrap items-center gap-3">
+                        <button type="button" className="text-xs font-medium text-muted-foreground hover:text-foreground" onClick={() => setReplying((open) => !open)}>
+                          <Reply className="mr-1 inline h-3 w-3" />{t('comment.reply')}
+                        </button>
+                        {comment._count?.replies ? (
+                          <button type="button" className="text-xs font-medium text-muted-foreground hover:text-foreground" onClick={() => setRepliesOpen((open) => !open)}>
+                            {repliesOpen ? <ChevronUp className="mr-1 inline h-3 w-3" /> : <ChevronDown className="mr-1 inline h-3 w-3" />}
+                            {repliesOpen ? t('comment.hideReplies') : t('comment.viewReplies')} ({comment._count.replies})
+                          </button>
+                        ) : null}
+                      </div>
+                    )}
+                    {replying && (
+                      <div className="mt-3 flex gap-2">
+                        <Input value={replyText} onChange={(event) => setReplyText(event.target.value)} maxLength={300} placeholder={t('comment.replyPlaceholder')} aria-label={t('comment.replyPlaceholder')} />
+                        <Button size="icon" aria-label={t('comment.reply')} disabled={!replyText.trim()} onClick={submitReply}><Send className="h-4 w-4" /></Button>
+                      </div>
+                    )}
+                    {repliesOpen && (
+                      <div className="mt-3">
+                        {repliesLoading ? <p className="py-2 text-xs text-muted-foreground">{t('common.loading')}</p> : replies.map((reply) => (
+                          <CommentThreadItem key={reply.id} comment={reply} postId={postId} depth={depth + 1} onReply={onReply} onLike={onLike} onDelete={onDelete} isLiking={isLiking} isDeleting={isDeleting} />
+                        ))}
+                        {replyPagination && replyPagination.totalPages > 1 && (
+                          <div className="mt-2 flex items-center gap-3 text-xs">
+                            <button type="button" disabled={repliesPage <= 1} onClick={() => setRepliesPage((page) => page - 1)}>{t('search.previous')}</button>
+                            <span>{replyPagination.page}/{replyPagination.totalPages}</span>
+                            <button type="button" disabled={repliesPage >= replyPagination.totalPages} onClick={() => setRepliesPage((page) => page + 1)}>{t('search.next')}</button>
+                          </div>
+                        )}
+                      </div>
+                    )}
       </div>
-    </div>
+    </article>
   );
 };

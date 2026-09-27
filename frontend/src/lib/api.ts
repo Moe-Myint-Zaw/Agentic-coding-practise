@@ -167,15 +167,16 @@ export const api = {
   },
 
   // Comment endpoints
-  async getPostComments(postId: string, params?: { page?: number; limit?: number }): Promise<any> {
+  async getPostComments(postId: string, params?: { page?: number; limit?: number; parentId?: string }): Promise<any> {
     const queryParams = new URLSearchParams();
     if (params?.page) queryParams.append('page', params.page.toString());
     if (params?.limit) queryParams.append('limit', params.limit.toString());
+    if (params?.parentId) queryParams.append('parentId', params.parentId);
 
     return authenticatedFetch(`/posts/${postId}/comments?${queryParams.toString()}`);
   },
 
-  async createComment(data: { postId: string; content: string }): Promise<any> {
+  async createComment(data: { postId: string; content: string; parentId?: string }): Promise<any> {
     return authenticatedFetch('/comments', {
       method: 'POST',
       body: JSON.stringify(data),

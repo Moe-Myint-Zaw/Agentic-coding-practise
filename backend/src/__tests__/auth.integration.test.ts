@@ -343,4 +343,68 @@ describe('Auth integration', () => {
       sockets.forEach((socket) => socket.close());
     }
   });
+
+  it('creates multi-level comment threads and lists comments by parent', async () => {
+    const authorRes = await request(app).post('/api/v1/auth/register').send({
+      email: `thread-author-${Date.now()}@example.com`,
+      username: `ta${Date.now().toString().slice(-8)}`,
+      password: 'password123',
+    });
+    const commenterRes = await request(app).post('/api/v1/auth/register').send({
+      email: `thread-commenter-${Date.now()}@example.com`,
+      username: `tc${Date.now().toString().slice(-8)}`,
+      password: 'password123',
+    });
+    const post = await prisma.post.create({
+      data: { authorId: authorRes.body.data.user.id, content: 'Threaded discussion' },
+    });
+    const token = commenterRes.body.data.tokens.accessToken;
+    const createComment = (content: string, parentId?: string) => request(app)
+      .post('/api/v1/comments')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ postId: post.id, content, ...(parentId ? { parentId } : {}) });
+
+    const root = await createComment('Root comment');
+    const reply = await createComment('First reply', root.body.data.id);
+    const nestedReply = await createComment('Nested reply', reply.body.data.id);
+
+    expect(root.status).toBe(201);
+    expect(reply.body.data.parentId).toBe(root.body.data.id);
+    expect(nestedReply.body.data.parentId).toBe(reply.body.data.id);
+
+    const rootList = await request(app)
+      .get(`/api/v1/posts/${post.id}/comments`)
+      .set('Authorization', `Bearer ${token}`);
+    expect(rootList.body.data.items).toEqual([
+      expect.objectContaining({ id: root.body.data.id, _count: expect.objectContaining({ replies: 1 }) }),
+    ]);
+    expect(rootList.body.data.items[0].author.email).toBeUndefined();
+
+    const replyList = await request(app)
+      .get(`/api/v1/posts/${post.id}/comments?parentId=${root.body.data.id}`)
+      .set('Authorization', `Bearer ${token}`);
+    expect(replyList.body.data.items).toEqual([
+      expect.objectContaining({ id: reply.body.data.id, _count: expect.objectContaining({ replies: 1 }) }),
+    ]);
+
+    await request(app)
+      .delete(`/api/v1/comments/${root.body.data.id}`)
+      .set('Authorization', `Bearer ${token}`);
+    const deletedParentList = await request(app)
+      .get(`/api/v1/posts/${post.id}/comments`)
+      .set('Authorization', `Bearer ${token}`);
+    expect(deletedParentList.body.data.items).toEqual([
+      expect.objectContaining({ id: root.body.data.id, isDeleted: true, content: '' }),
+    ]);
+
+    const otherPost = await prisma.post.create({
+      data: { authorId: authorRes.body.data.user.id, content: 'Another discussion' },
+    });
+    const invalidReply = await request(app)
+      .post('/api/v1/comments')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ postId: otherPost.id, parentId: root.body.data.id, content: 'Wrong thread' });
+    expect(invalidReply.status).toBe(400);
+    expect(invalidReply.body.error.code).toBe('INVALID_PARENT_COMMENT');
+  });
 });

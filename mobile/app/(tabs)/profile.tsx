@@ -14,6 +14,7 @@ import {
   View,
 } from "react-native";
 import { RemoteImage } from "@/components/remote-image";
+import { ScreenFrame } from "@/components/screen-frame";
 import { useAuth } from "@/contexts/auth-context";
 import { useLocale } from "@/contexts/locale-context";
 import { useTheme } from "@/contexts/theme-context";
@@ -119,6 +120,10 @@ export default function ProfileScreen() {
     : viewedUser.coverImage || "";
 
   return (
+    <ScreenFrame
+      edges={isStandaloneProfile ? ["left", "right", "bottom"] : ["top", "left", "right"]}
+      keyboardAware={isOwnProfile && isEditing}
+    >
     <View style={styles.page}>
       <View style={styles.hero}>
         {isOwnProfile ? <Pressable accessibilityRole="button" accessibilityLabel={t("coverPhoto")} onPress={() => pickPhoto("cover")} disabled={uploading !== null} style={styles.coverPhoto}>
@@ -236,6 +241,9 @@ export default function ProfileScreen() {
         <FlatList
           data={posts.data?.items ?? []}
           keyExtractor={(item) => item.id}
+          contentInsetAdjustmentBehavior="never"
+          keyboardDismissMode="on-drag"
+          keyboardShouldPersistTaps="handled"
           renderItem={({ item }) => (
             <View style={styles.postCard}>
               <View style={styles.postHeader}>
@@ -316,6 +324,7 @@ export default function ProfileScreen() {
         />
       )}
     </View>
+    </ScreenFrame>
   );
 }
 

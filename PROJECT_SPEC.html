@@ -786,7 +786,7 @@
                 </div>
 
                 <h3>Current Implementation Status</h3>
-                <p>The repository includes a working backend and web/mobile clients. Implemented features cover authentication, post and comment management, likes, profiles, uploads, admin moderation, follow management, feed filtering, user and full-text search, backend notifications with history/read APIs, and WebSocket content updates for connected authenticated users. Notification preferences and UX polish remain future work.</p>
+                <p>The repository includes a working backend and web/mobile clients. Implemented features cover authentication, post and comment management, multi-level comment threads, likes, profiles, uploads, admin moderation, follow management, feed filtering, user and full-text search, backend notifications with history/read APIs, and WebSocket content updates for connected authenticated users. Mobile screens account for safe areas and keyboard-visible layouts, including a scrollable post detail body with a keyboard-aware comment composer. Notification preferences and UX polish remain future work.</p>
             </section>
 
             <!-- Project Goals -->
@@ -829,7 +829,7 @@
                         <ul>
                             <li>User Authentication (registration, login, JWT refresh, current-user lookup)</li>
                             <li>Post Management (create, view, delete posts with text and images)</li>
-                            <li>Comments (create and delete comments on posts)</li>
+                            <li>Comments (create, delete, like, and reply at multiple levels on posts)</li>
                             <li>Likes & Reactions (toggle like/unlike posts and comments)</li>
                             <li>Real-time Content Updates (WebSocket updates for posts, comments, and likes across connected authenticated users)</li>
                             <li>User Profiles (view profiles, update profile details, list user posts)</li>
@@ -846,7 +846,6 @@
                             <li>Advanced Privacy Settings</li>
                             <li>Additional Enhanced Profile fields (location and website)</li>
                             <li>Notification UX enhancements (preferences, in-app toast patterns, notification center polish)</li>
-                            <li>Multi-level Comment Threading</li>
                         </ul>
                     </div>
                 </div>
@@ -970,6 +969,7 @@
                         <h5>Create Comment</h5>
                         <ul>
                             <li>Add comments to posts (max 300 characters)</li>
+                            <li>Reply to any comment at any depth within the same post</li>
                             <li>Comment creation timestamp</li>
                             <li>Automatic association with user and post</li>
                         </ul>
@@ -979,6 +979,8 @@
                         <ul>
                             <li>View all comments on a post</li>
                             <li>Pagination (10 comments per page)</li>
+                            <li>List root comments and direct replies independently; expand replies on demand</li>
+                            <li>Keep deleted comments as content-free placeholders when they have replies</li>
                             <li>Display author, content, timestamp, like count</li>
                         </ul>
                     </div>
@@ -1304,8 +1306,11 @@ enum Role {
   content   String
   postId    String
   post      Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
-  authorId  String
-  author    User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+    authorId  String
+    author    User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+    parentId  String?
+    parent    Comment?  @relation("CommentThread", fields: [parentId], references: [id], onDelete: Cascade)
+    replies   Comment[] @relation("CommentThread")
   isDeleted Boolean   @default(false)
   deletedAt DateTime?
   deletedBy String?   // Admin ID who deleted
@@ -1316,6 +1321,7 @@ enum Role {
 
   @@index([postId])
   @@index([authorId])
+    @@index([parentId])
   @@index([createdAt])
   @@index([isDeleted])
 }</div>
@@ -1415,6 +1421,7 @@ User (1) ----< (N) Notification</div>
                         <code><span class="method put">PUT</span>    /posts/:id            - Update post (future)</code>
                         <code><span class="method delete">DELETE</span> /posts/:id            - Delete post</code>
                         <code><span class="method get">GET</span>    /posts/:id/comments   - Get post comments</code>
+                        <code><span class="method get">GET</span>    /posts/:id/comments?parentId=&lt;commentId&gt;&amp;page=&lt;page&gt;&amp;limit=&lt;limit&gt; - Get direct replies</code>
                     </div>
                 </div>
 
@@ -1422,6 +1429,7 @@ User (1) ----< (N) Notification</div>
                     <h5>Comments</h5>
                     <div class="endpoint-list">
                         <code><span class="method post">POST</span>   /comments             - Create comment</code>
+                        <code>Body: { postId, content, parentId? } (omit parentId for a root comment)</code>
                         <code><span class="method get">GET</span>    /comments/:id         - Get single comment</code>
                         <code><span class="method delete">DELETE</span> /comments/:id         - Delete comment</code>
                     </div>
@@ -1612,6 +1620,15 @@ Response:
                     <li>Server returns created comment</li>
                     <li>Client adds comment to list</li>
                     <li>Comment count updates</li>
+                </ol>
+
+                <h3>Comment Reply Workflow</h3>
+                <ol>
+                    <li>User chooses Reply on any comment</li>
+                    <li>Client submits the reply with the post ID and parent comment ID</li>
+                    <li>Server verifies the parent belongs to the same post and is not deleted</li>
+                    <li>Client refreshes the affected thread and displays the reply</li>
+                    <li>Users can expand and paginate direct replies at every nesting level</li>
                 </ol>
 
                 <h3>Profile Editing Workflow</h3>
@@ -2044,7 +2061,7 @@ Response:
                         </li>
                         <li>Advanced Features
                             <ul>
-                                <li>Multi-level comment threading</li>
+                                <li><strong>Implemented</strong>: Multi-level comment threading across web and mobile</li>
                                 <li>Additional enhanced profile fields</li>
                                 <li>Privacy settings</li>
                             </ul>

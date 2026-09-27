@@ -58,6 +58,8 @@ As of the current repository state, the project is already beyond a blank scaffo
 - Feed filtering is implemented with `latest` and `following` modes in the web and mobile clients.
 - Notifications are implemented on the backend through WebSocket events and notification history/read APIs; notification preferences and UX polish remain future work.
 - Full-text search is implemented for authenticated users on web and mobile, covering public profiles, non-deleted post text, and comments on visible posts with separate pagination.
+- Multi-level comments are implemented on web and mobile, with same-post parent validation, on-demand direct replies, per-level pagination, and deleted-parent placeholders.
+- Mobile screens account for safe areas and keyboard-visible layouts; the post detail body scrolls while its comment composer remains keyboard-aware.
 - The web app and Expo mobile app are both present in the workspace and wired to the same backend API contract.
 
 ## Project Goals
@@ -74,7 +76,7 @@ As of the current repository state, the project is already beyond a blank scaffo
 ### Current MVP Scope (implemented / in active use)
 - User Authentication (registration, login, JWT refresh, current-user lookup)
 - Post Management (create, view, delete posts with text and images)
-- Comments (create and delete comments on posts)
+- Comments (create, delete, like, and reply at multiple levels on posts)
 - Likes & Reactions (toggle like/unlike posts and comments)
 - Real-time Content Updates (WebSocket updates for posts, comments, and likes across connected authenticated users)
 - User Profiles (view profiles, update profile details, list user posts)
@@ -88,7 +90,6 @@ As of the current repository state, the project is already beyond a blank scaffo
 - Advanced Privacy Settings
 - Additional Enhanced Profile fields (location and website)
 - Notification UX enhancements (preferences, in-app toast patterns, notification center polish)
-- Multi-level Comment Threading
 
 ## User Roles
 
@@ -173,12 +174,15 @@ As of the current repository state, the project is already beyond a blank scaffo
 
 #### Create Comment
 - Add comments to posts (max 300 characters)
+- Any comment can be replied to at any depth; replies remain associated with the same post
 - Comment creation timestamp
 - Automatic association with authenticated user and post
 
 #### View Comments
 - View all comments on a post
 - Pagination (10 comments per page)
+- List root comments and each comment's direct replies independently; expand replies on demand
+- Preserve deleted comments as content-free placeholders when they have replies
 - Display comment author, content, timestamp, like count
 
 #### Delete Comment
@@ -425,6 +429,9 @@ model Comment {
   post      Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
   authorId  String
   author    User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  parentId  String?
+  parent    Comment?  @relation("CommentThread", fields: [parentId], references: [id], onDelete: Cascade)
+  replies   Comment[] @relation("CommentThread")
   isDeleted Boolean   @default(false)
   deletedAt DateTime?
   deletedBy String?   // Admin ID who deleted
@@ -435,6 +442,7 @@ model Comment {
 
   @@index([postId])
   @@index([authorId])
+  @@index([parentId])
   @@index([createdAt])
   @@index([isDeleted])
 }
@@ -524,11 +532,13 @@ GET    /posts/:id            - Get single post
 PUT    /posts/:id            - Update post (future)
 DELETE /posts/:id            - Delete post
 GET    /posts/:id/comments   - Get post comments
+GET    /posts/:id/comments?parentId=<commentId>&page=<page>&limit=<limit> - Get direct replies
 ```
 
 #### Comments
 ```
 POST   /comments             - Create comment
+  Body: { postId, content, parentId? } (omit parentId for a root comment)
 GET    /comments/:id         - Get single comment
 DELETE /comments/:id         - Delete comment
 ```
@@ -707,6 +717,13 @@ Response:
 7. Server returns created comment
 8. Client adds comment to list
 9. Comment count updates
+
+### Comment Reply Workflow
+1. User chooses Reply on any comment
+2. Client submits the reply with the post ID and parent comment ID
+3. Server verifies the parent belongs to the same post and is not deleted
+4. Client invalidates the affected thread and displays the new reply
+5. Users can expand and page through direct replies at every nesting level
 
 ### Profile Editing Workflow
 1. User navigates to their profile
@@ -937,54 +954,54 @@ User (1) ----< (N) Notification
 
 ### Phase 1: Foundation (Week 1-2)
 - [ ] Project setup and configuration
-  - [ ] Initialize web project (Vite + React + TypeScript)
-  - [ ] Initialize backend project (Express + TypeScript + Prisma)
-  - [ ] Initialize mobile project (Expo + React Native)
-  - [ ] Set up development environment and tooling
+  - [x] Initialize web project (Vite + React + TypeScript)
+  - [x] Initialize backend project (Express + TypeScript + Prisma)
+  - [x] Initialize mobile project (Expo + React Native)
+  - [x] Set up development environment and tooling
   - [ ] Configure ESLint, Prettier, and TypeScript
 - [ ] Database setup
-  - [ ] Design and implement Prisma schema
-  - [ ] Set up SQLite for development
-  - [ ] Create database migrations
+  - [x] Design and implement Prisma schema
+  - [x] Set up SQLite for development
+  - [x] Create database migrations
   - [ ] Seed database with test data
-- [ ] Authentication system
-  - [ ] Implement JWT token generation and validation
-  - [ ] Create user registration endpoint
-  - [ ] Create user login endpoint
-  - [ ] Implement password hashing
-  - [ ] Add rate limiting to auth endpoints
-  - [ ] Create auth middleware
-- [ ] Basic frontend structure
-  - [ ] Set up React Router
-  - [ ] Create layout components
+- [x] Authentication system
+  - [x] Implement JWT token generation and validation
+  - [x] Create user registration endpoint
+  - [x] Create user login endpoint
+  - [x] Implement password hashing
+  - [x] Add rate limiting to auth endpoints
+  - [x] Create auth middleware
+- [x] Basic frontend structure
+  - [x] Set up React Router
+  - [x] Create layout components
   - [x] Implement web theme provider (light/dark)
-  - [ ] Set up i18n (English/Myanmar)
-  - [ ] Create login and register pages
+  - [x] Set up i18n (English/Myanmar)
+  - [x] Create login and register pages
 
 ### Phase 2: Core Features (Week 3-4)
 - [ ] Post Management
-  - [ ] Create post endpoints (CRUD)
-  - [ ] Implement image upload functionality
+  - [x] Create post endpoints (CRUD)
+  - [x] Implement image upload functionality
   - [ ] Add image validation and optimization
   - [ ] Create post components (PostCard, CreatePostModal)
   - [ ] Implement feed page with pagination
   - [ ] Add infinite scroll
-- [ ] Comment System
-  - [ ] Create comment endpoints
-  - [ ] Implement comment components
-  - [ ] Add comment section to post detail
-  - [ ] Implement comment pagination
+- [x] Comment System
+  - [x] Create comment endpoints
+  - [x] Implement comment components
+  - [x] Add comment section to post detail
+  - [x] Implement comment pagination
 - [ ] Likes System
-  - [ ] Create like endpoints
-  - [ ] Implement like components
-  - [ ] Add like buttons to posts and comments
+  - [x] Create like endpoints
+  - [x] Implement like controls
+  - [x] Add like buttons to posts and comments
   - [ ] Implement optimistic updates
-- [ ] User Profiles
-  - [ ] Create user profile endpoints
-  - [ ] Implement profile components
-  - [ ] Create profile page
-  - [ ] Add edit profile functionality
-  - [ ] Implement profile picture upload
+- [x] User Profiles
+  - [x] Create user profile endpoints
+  - [x] Implement profile components
+  - [x] Create profile page
+  - [x] Add edit profile functionality
+  - [x] Implement profile picture upload
 
 ### Phase 3: Admin Features (Week 5)
 - [ ] Admin Dashboard
@@ -1002,20 +1019,21 @@ User (1) ----< (N) Notification
 
 ### Phase 4: Mobile App (Week 6-7)
 - [ ] Mobile Setup
-  - [ ] Set up Expo Router navigation
+  - [x] Set up Expo Router navigation
   - [ ] Configure Expo UI components
-  - [ ] Set up React Query for mobile
-  - [ ] Implement theme provider
-  - [ ] Set up i18n for mobile
-- [ ] Mobile Features
-  - [ ] Implement feed screen
-  - [ ] Create post detail screen
-  - [ ] Implement profile screen
-  - [ ] Add authentication screens
-  - [ ] Implement create post functionality
-  - [ ] Add image picker integration
+  - [x] Set up React Query for mobile
+  - [x] Implement theme provider
+  - [x] Set up i18n for mobile
+- [x] Mobile Features
+  - [x] Implement feed screen
+  - [x] Create post detail screen
+  - [x] Implement profile screen
+  - [x] Add authentication screens
+  - [x] Implement create post functionality
+  - [x] Add image picker integration
+- [x] Add mobile safe-area and keyboard-aware layouts
 - [ ] Mobile Admin
-  - [ ] Implement admin dashboard screen
+  - [x] Implement admin dashboard screen
   - [ ] Add moderation features
 
 ### Phase 5: Polish & Testing (Week 8)
@@ -1057,7 +1075,7 @@ User (1) ----< (N) Notification
   - [ ] Notification UX polish
   - [ ] Add notification preferences
 - [ ] Advanced Features
-  - [ ] Multi-level comment threading
+  - [x] Multi-level comment threading across web and mobile
   - [ ] Additional enhanced profile fields
   - [ ] Privacy settings
 

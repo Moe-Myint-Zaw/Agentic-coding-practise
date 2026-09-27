@@ -1,7 +1,7 @@
 {
   "nav": {
     "home": "ပင်မစာမျက်နှာ",
-    "feed": "ဖိတ်ကား",
+    "feed": "ပိတ်ကား",
     "profile": "ကိုယ်ရေးအချက်အလက်",
     "settings": "ဆက်တင်များ",
     "login": "ဝင်ရောက်ပါ",
@@ -33,7 +33,7 @@
   "feed": {
     "filters": "ဖိဒ်စစ်ထုတ်မှု",
     "latest": "နောက်ဆုံးတင်ထားသည်များ",
-    "following": "လိုက်နေသူများ"
+    "following": "လိုက်ထားသူများ"
   },
   "notifications": {
     "eyebrow": "သင့်လှုပ်ရှားမှု",
@@ -88,6 +88,13 @@
     "commentButton": "မှတ်ချက်",
     "comments": "မှတ်ချက်များ",
     "noComments": "မှတ်ချက်မရှိသေးပါ",
+    "reply": "ပြန်စာရေးရန်",
+    "replyPlaceholder": "ပြန်စာရေးရန်...",
+    "replies": "ပြန်စာ {{count}} ခု",
+    "viewReplies": "ပြန်စာများကြည့်ရန်",
+    "hideReplies": "ပြန်စာများဖျောက်ရန်",
+    "loadMoreReplies": "နောက်ထပ်ပြန်စာများ",
+    "deletedComment": "ဤမှတ်ချက်ကို ဖျက်ထားသည်။",
     "deleteComment": "မှတ်ချက်ဖျက်ရန်",
     "likeComment": "ကြိုက်ရန်",
     "unlikeComment": "မကြိုက်တော့ပါ"

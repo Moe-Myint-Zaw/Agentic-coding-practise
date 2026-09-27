@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { PostDetail } from './PostDetail';
 
@@ -109,5 +109,45 @@ describe('PostDetail', () => {
 
     expect(screen.getByText(/Tester/i)).toBeTruthy();
     expect(screen.getByText(/Hello world/i)).toBeTruthy();
+  });
+
+  it('submits a reply against its parent comment', async () => {
+    const mutateAsync = vi.fn().mockResolvedValue({});
+    mockUseCreateComment.mockReturnValue({ mutateAsync, isPending: false });
+    mockUsePostComments.mockImplementation((_postId, params) => ({
+      data: {
+        success: true,
+        data: {
+          items: params?.parentId ? [] : [{
+            id: 'comment-1',
+            content: 'A root comment',
+            postId: 'post-1',
+            parentId: null,
+            authorId: 'user-2',
+            author: { id: 'user-2', username: 'another', displayName: 'Another user' },
+            isDeleted: false,
+            createdAt: '2026-09-15T00:00:00.000Z',
+            likes: [],
+            _count: { likes: 0, replies: 0 },
+          }],
+          pagination: { page: 1, total: 1, totalPages: 1 },
+        },
+      },
+      isLoading: false,
+    }));
+
+    render(
+      <MemoryRouter initialEntries={['/post/post-1']}>
+        <Routes>
+          <Route path="/post/:id" element={<PostDetail />} />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'comment.reply' }));
+    fireEvent.change(screen.getByPlaceholderText('comment.replyPlaceholder'), { target: { value: 'A nested response' } });
+    fireEvent.click(screen.getAllByRole('button', { name: 'comment.reply' }).at(-1)!);
+
+    expect(mutateAsync).toHaveBeenCalledWith({ postId: 'post-1', parentId: 'comment-1', content: 'A nested response' });
   });
 });

@@ -88,6 +88,13 @@
     "commentButton": "Comment",
     "comments": "Comments",
     "noComments": "No comments yet",
+    "reply": "Reply",
+    "replyPlaceholder": "Write a reply...",
+    "replies": "{{count}} replies",
+    "viewReplies": "View replies",
+    "hideReplies": "Hide replies",
+    "loadMoreReplies": "Load more replies",
+    "deletedComment": "This comment was deleted.",
     "deleteComment": "Delete Comment",
     "likeComment": "Like",
     "unlikeComment": "Unlike"

@@ -5,8 +5,10 @@ export const listComments = async (req: Request, res: Response, next: NextFuncti
   try {
     const page = Number(req.query.page || 1);
     const limit = Number(req.query.limit || 10);
-    const postId = Array.isArray(req.params.postId) ? req.params.postId[0] : req.params.postId;
-    const result = await getCommentsByPost(postId, page, limit);
+    const parentId = typeof req.query.parentId === 'string' ? req.query.parentId : null;
+    const postIdParam = req.params.postId ?? req.params.id;
+    const postId = Array.isArray(postIdParam) ? postIdParam[0] : postIdParam;
+    const result = await getCommentsByPost(postId, page, limit, parentId);
     res.status(200).json({ success: true, data: result });
   } catch (error) {
     next(error);
@@ -19,6 +21,7 @@ export const create = async (req: Request, res: Response, next: NextFunction) =>
       content: req.body.content,
       postId: req.body.postId,
       userId: req.user!.userId,
+      parentId: req.body.parentId,
     });
     res.status(201).json({ success: true, data: result });
   } catch (error) {

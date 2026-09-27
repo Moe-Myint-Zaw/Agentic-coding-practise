@@ -2,13 +2,14 @@ import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider } from '@/contexts/auth-context';
 import { ThemeProvider as AppThemeProvider, useTheme } from '@/contexts/theme-context';
 import { LocaleProvider } from '@/contexts/locale-context';
 import { queryClient } from '@/lib/query-client';
 
 export default function RootLayout() {
-  return <AuthProvider><AppThemeProvider><LocaleProvider><QueryClientProvider client={queryClient}><RootNavigator /></QueryClientProvider></LocaleProvider></AppThemeProvider></AuthProvider>;
+  return <SafeAreaProvider><AuthProvider><AppThemeProvider><LocaleProvider><QueryClientProvider client={queryClient}><RootNavigator /></QueryClientProvider></LocaleProvider></AppThemeProvider></AuthProvider></SafeAreaProvider>;
 }
 function RootNavigator() {
   const { colorScheme } = useTheme();

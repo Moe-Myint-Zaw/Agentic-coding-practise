@@ -193,12 +193,15 @@ export const api = {
   },
   deletePost: (id: string) =>
     request<{ deleted: boolean }>(`/posts/${id}`, { method: "DELETE" }),
-  comments: (postId: string, page = 1) =>
-    request<Page<Comment>>(`/posts/${postId}/comments?page=${page}&limit=10`),
-  createComment: (postId: string, content: string) =>
+  comments: (postId: string, page = 1, parentId?: string) => {
+    const params = new URLSearchParams({ page: String(page), limit: '10' });
+    if (parentId) params.set('parentId', parentId);
+    return request<Page<Comment>>(`/posts/${postId}/comments?${params.toString()}`);
+  },
+  createComment: (postId: string, content: string, parentId?: string) =>
     request<Comment>("/comments", {
       method: "POST",
-      body: JSON.stringify({ postId, content }),
+      body: JSON.stringify({ postId, content, ...(parentId ? { parentId } : {}) }),
     }),
   deleteComment: (id: string) =>
     request<{ deleted: boolean }>(`/comments/${id}`, { method: "DELETE" }),

@@ -3,17 +3,26 @@ import { ApiError } from '../middleware/error.middleware';
 import { createNotification } from './notification.service';
 import { broadcastContentUpdate } from '../realtime/websocket';
 
-export const getCommentsByPost = async (postId: string, page = 1, limit = 10) => {
+export const getCommentsByPost = async (postId: string, page = 1, limit = 10, parentId: string | null = null) => {
   const skip = (page - 1) * limit;
+  const where = {
+    postId,
+    parentId,
+    OR: [{ isDeleted: false }, { replies: { some: {} } }],
+  };
   const [items, total] = await Promise.all([
     prisma.comment.findMany({
-      where: { postId, isDeleted: false },
-      include: { author: true, likes: true },
+      where,
+      include: {
+        author: { select: { id: true, username: true, displayName: true, profileImage: true } },
+        likes: true,
+        _count: { select: { likes: true, replies: true } },
+      },
       orderBy: { createdAt: 'asc' },
       skip,
       take: limit,
     }),
-    prisma.comment.count({ where: { postId, isDeleted: false } }),
+    prisma.comment.count({ where }),
   ]);
 
   return {
@@ -27,21 +36,35 @@ export const getCommentsByPost = async (postId: string, page = 1, limit = 10) =>
   };
 };
 
-export const createComment = async (input: { content: string; postId: string; userId: string }) => {
+export const createComment = async (input: { content: string; postId: string; userId: string; parentId?: string }) => {
   const post = await prisma.post.findUnique({ where: { id: input.postId } });
   if (!post || post.isDeleted) throw new ApiError('Post not found', 404, 'POST_NOT_FOUND');
+
+  const parent = input.parentId
+    ? await prisma.comment.findUnique({ where: { id: input.parentId } })
+    : null;
+  if (input.parentId) {
+    if (!parent || parent.postId !== input.postId || parent.isDeleted) {
+      throw new ApiError('Parent comment is invalid', 400, 'INVALID_PARENT_COMMENT');
+    }
+  }
 
   const comment = await prisma.comment.create({
     data: {
       content: input.content,
       postId: input.postId,
       authorId: input.userId,
+      parentId: input.parentId,
     },
-    include: { author: true, likes: true },
+    include: {
+      author: { select: { id: true, username: true, displayName: true, profileImage: true } },
+      likes: true,
+      _count: { select: { likes: true, replies: true } },
+    },
   });
   broadcastContentUpdate({ resource: 'comment', action: 'created', postId: input.postId, commentId: comment.id });
   await createNotification({
-    recipientId: post.authorId,
+    recipientId: parent?.authorId ?? post.authorId,
     actorId: input.userId,
     type: 'COMMENT_CREATED',
     postId: input.postId,
@@ -70,8 +93,9 @@ export const deleteComment = async (id: string, userId: string, userRole: 'USER'
 
 const serializeComment = (comment: any) => ({
   id: comment.id,
-  content: comment.content,
+  content: comment.isDeleted ? '' : comment.content,
   postId: comment.postId,
+  parentId: comment.parentId,
   authorId: comment.authorId,
   author: comment.author,
   isDeleted: comment.isDeleted,
@@ -79,6 +103,9 @@ const serializeComment = (comment: any) => ({
   deletedBy: comment.deletedBy,
   createdAt: comment.createdAt,
   updatedAt: comment.updatedAt,
-  likes: comment.likes || [],
-  _count: { likes: comment.likes?.length || 0 },
+  likes: comment.isDeleted ? [] : comment.likes || [],
+  _count: {
+    likes: comment.isDeleted ? 0 : comment._count?.likes ?? comment.likes?.length ?? 0,
+    replies: comment._count?.replies ?? 0,
+  },
 });

@@ -41,6 +41,7 @@ export interface Comment {
   id: string;
   content: string;
   postId: string;
+  parentId?: string | null;
   post?: Post;
   authorId: string;
   author: User;
@@ -52,6 +53,7 @@ export interface Comment {
   likes?: Like[];
   _count?: {
     likes: number;
+    replies?: number;
   };
 }
 

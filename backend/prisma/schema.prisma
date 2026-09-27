@@ -72,6 +72,9 @@ model Comment {
   post       Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
   authorId   String
   author     User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  parentId   String?
+  parent     Comment?  @relation("CommentThread", fields: [parentId], references: [id], onDelete: Cascade)
+  replies    Comment[] @relation("CommentThread")
   isDeleted  Boolean   @default(false)
   deletedAt  DateTime?
   deletedBy  String?
@@ -83,6 +86,7 @@ model Comment {
 
   @@index([postId])
   @@index([authorId])
+  @@index([parentId])
 }
 
 model Like {
