@@ -14,11 +14,11 @@ The clients communicate with the backend over HTTP. The backend uses SQLite for 
 
 ## Current Implementation Status
 
-- The backend provides authentication, post and comment APIs, likes, uploads, profiles, follow management, search, admin moderation, notifications, and real-time content updates.
-- Comments support multi-level replies. Web and mobile clients can expand and paginate replies at each level.
-- Web and Expo mobile clients include feed, post detail, profile, authentication, search, notifications, settings, and admin screens.
-- Mobile screens use safe-area insets; input screens are keyboard-aware, and the post detail body scrolls independently from its comment composer.
-- Remaining roadmap work is still tracked in `PROJECT_SPEC.md` and `PROJECT_SPEC.html`.
+- The repository contains a working full-stack MVP across the backend, web client, and Expo mobile app.
+- Implemented backend features include authentication, JWT refresh, post and comment APIs, likes, uploads, profiles, follow management, admin moderation, search, notification history/read APIs, and real-time WebSocket updates.
+- Multi-level comment threads, per-level reply pagination, and follow/search flows are available on both web and mobile clients.
+- The web and mobile apps include auth, feed, post detail, profile, notifications, settings, admin, and search screens, with safe-area handling and keyboard-aware layouts.
+- Planned future work remains intentionally documented in `PROJECT_SPEC.md` and `PROJECT_SPEC.html`, including password recovery, privacy settings, enhanced profile fields, and notification UX refinements.
 
 ## Technology Stack
 

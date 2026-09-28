@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, act } from '@testing-library/react';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { PostDetail } from './PostDetail';
 
@@ -144,9 +144,17 @@ describe('PostDetail', () => {
       </MemoryRouter>
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'comment.reply' }));
-    fireEvent.change(screen.getByPlaceholderText('comment.replyPlaceholder'), { target: { value: 'A nested response' } });
-    fireEvent.click(screen.getAllByRole('button', { name: 'comment.reply' }).at(-1)!);
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'comment.reply' }));
+    });
+
+    await act(async () => {
+      fireEvent.change(screen.getByPlaceholderText('comment.replyPlaceholder'), { target: { value: 'A nested response' } });
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getAllByRole('button', { name: 'comment.reply' }).at(-1)!);
+    });
 
     expect(mutateAsync).toHaveBeenCalledWith({ postId: 'post-1', parentId: 'comment-1', content: 'A nested response' });
   });

@@ -47,12 +47,12 @@ A modern, full-stack social media application built with a unified technology st
 
 ## Current Implementation Status
 
-As of the current repository state, the project is already beyond a blank scaffold and includes the following implemented work:
+As of 2026-09-28, the repository has moved beyond a scaffold and contains a working social media MVP with the core product flows already implemented.
 
-- Backend API routes for authentication, refresh, current-user lookup, posts, comments, likes, profile updates, image upload, admin moderation, and unified search are present.
+- Backend API routes for authentication, refresh, current-user lookup, posts, comments, likes, profile updates, image upload, admin moderation, unified search, follow management, and notification history are present.
 - User authentication flows include registration, login, JWT issuance, refresh token handling, and protected route enforcement.
 - Post and comment operations support listing, creation, retrieval, owner-only post editing within 24 hours, deletion, and like toggling.
-- Real-time content updates are broadcast to all connected authenticated users for post and comment creation, updates/deletion, and post/comment like toggles; web and mobile refresh affected views through React Query.
+- Real-time content updates are broadcast to connected authenticated users for post and comment creation, updates/deletion, and like toggles; the web and mobile clients refresh affected views through React Query.
 - User profile and admin endpoints are implemented for viewing profiles, user-specific posts, stats, moderation lists, and banning.
 - Follow management is implemented for authenticated users, including follow/unfollow toggling, follower/following counts, and follow state on profiles.
 - Feed filtering is implemented with `latest` and `following` modes in the web and mobile clients.
@@ -61,6 +61,7 @@ As of the current repository state, the project is already beyond a blank scaffo
 - Multi-level comments are implemented on web and mobile, with same-post parent validation, on-demand direct replies, per-level pagination, and deleted-parent placeholders.
 - Mobile screens account for safe areas and keyboard-visible layouts; the post detail body scrolls while its comment composer remains keyboard-aware.
 - The web app and Expo mobile app are both present in the workspace and wired to the same backend API contract.
+- Future roadmap items remain intentionally preserved in this specification, including password recovery, privacy settings, enhanced profile fields, and notification UX improvements.
 
 ## Project Goals
 
@@ -1205,6 +1206,6 @@ User (1) ----< (N) Notification
 
 ---
 
-**Document Version**: 1.0
-**Last Updated**: 2025-01-09
-**Status**: Ready for Development
+**Document Version**: 1.1
+**Last Updated**: 2026-09-28
+**Status**: MVP Implemented — Future roadmap preserved

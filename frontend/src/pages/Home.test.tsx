@@ -6,7 +6,6 @@ import { ThemeProvider } from '../contexts/ThemeContext'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClient } from '../lib/api'
 import { BrowserRouter } from 'react-router-dom'
-import '../i18n'
 
 describe('Home', () => {
   it('renders home page', () => {

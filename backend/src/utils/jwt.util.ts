@@ -1,5 +1,6 @@
 import jwt, { type Secret, type SignOptions } from 'jsonwebtoken';
 import env from '../config/env';
+import type { JWTPayload } from '../types';
 
 const accessTokenOptions: SignOptions = {
   expiresIn: env.JWT_EXPIRES_IN as SignOptions['expiresIn'],
@@ -17,12 +18,12 @@ export const generateRefreshToken = (payload: object): string => {
   return jwt.sign(payload, env.JWT_REFRESH_SECRET as Secret, refreshTokenOptions);
 };
 
-export const verifyAccessToken = (token: string): any => {
-  return jwt.verify(token, env.JWT_SECRET);
+export const verifyAccessToken = (token: string): JWTPayload => {
+  return jwt.verify(token, env.JWT_SECRET) as JWTPayload;
 };
 
-export const verifyRefreshToken = (token: string): any => {
-  return jwt.verify(token, env.JWT_REFRESH_SECRET);
+export const verifyRefreshToken = (token: string): JWTPayload => {
+  return jwt.verify(token, env.JWT_REFRESH_SECRET) as JWTPayload;
 };
 
 export const generateTokens = (user: { id: string; email: string; username: string; role: 'USER' | 'ADMIN' }) => {

@@ -1,6 +1,5 @@
 import { NextFunction, Request, Response } from 'express';
 import { createPost, deletePost, getPostById, getPosts, getUserPosts, updatePost, type FeedType } from '../services/post.service';
-import { authenticate } from '../middleware/auth.middleware';
 
 export const listPosts = async (req: Request, res: Response, next: NextFunction) => {
   try {

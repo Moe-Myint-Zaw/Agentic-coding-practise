@@ -2,6 +2,50 @@ import prisma from '../config/database';
 import { ApiError } from '../middleware/error.middleware';
 import { broadcastContentUpdate } from '../realtime/websocket';
 
+interface PostWithIncludes {
+  id: string;
+  content: string;
+  images: string;
+  authorId: string;
+  isDeleted: boolean;
+  deletedAt: Date | null;
+  deletedBy: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  author: {
+    id: string;
+    username: string;
+    displayName: string | null;
+    profileImage: string | null;
+  };
+  comments?: Array<{
+    id: string;
+    content: string;
+    postId: string;
+    authorId: string;
+    isDeleted: boolean;
+    deletedAt: Date | null;
+    deletedBy: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+    parentId: string | null;
+  }>;
+  likes: Array<{ userId: string }>;
+}
+
+interface CommentWithIncludes {
+  id: string;
+  content: string;
+  postId: string;
+  authorId: string;
+  isDeleted: boolean;
+  deletedAt: Date | null;
+  deletedBy: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  parentId: string | null;
+}
+
 export type FeedType = 'latest' | 'following';
 
 export const getPosts = async (page = 1, limit = 20, feed: FeedType = 'latest', userId?: string) => {
@@ -141,7 +185,7 @@ export const getUserPosts = async (userId: string, page = 1, limit = 20) => {
   };
 };
 
-const serializePost = (post: any) => ({
+const serializePost = (post: PostWithIncludes) => ({
   id: post.id,
   content: post.content,
   images: parseImages(post.images),
@@ -152,7 +196,7 @@ const serializePost = (post: any) => ({
   deletedBy: post.deletedBy,
   createdAt: post.createdAt,
   updatedAt: post.updatedAt,
-  comments: post.comments?.map((comment: any) => serializeComment(comment)) || [],
+  comments: post.comments?.map((comment) => serializeComment(comment)) || [],
   likes: post.likes || [],
   _count: {
     comments: post.comments?.length || 0,
@@ -172,17 +216,16 @@ const parseImages = (images: string | string[] | null | undefined) => {
   }
 };
 
-const serializeComment = (comment: any) => ({
+const serializeComment = (comment: CommentWithIncludes) => ({
   id: comment.id,
   content: comment.content,
   postId: comment.postId,
   authorId: comment.authorId,
-  author: comment.author,
   isDeleted: comment.isDeleted,
   deletedAt: comment.deletedAt,
   deletedBy: comment.deletedBy,
   createdAt: comment.createdAt,
   updatedAt: comment.updatedAt,
-  likes: comment.likes || [],
-  _count: { likes: comment.likes?.length || 0 },
+  likes: [],
+  _count: { likes: 0 },
 });

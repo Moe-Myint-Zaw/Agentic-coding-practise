@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useLocalSearchParams, useSegments } from "expo-router";
+import { useLocalSearchParams, useSegments, router } from "expo-router";
 import { SymbolView } from "expo-symbols";
 import * as ImagePicker from "expo-image-picker";
 import { useState } from "react";
@@ -290,7 +290,7 @@ export default function ProfileScreen() {
                   accessibilityLabel={`${t("comments")} ${item._count.comments}`}
                   hitSlop={8}
                   onPress={() =>
-                    require("expo-router").router.push({ pathname: "/post/[id]", params: { id: item.id } })
+                    router.push({ pathname: "/post/[id]", params: { id: item.id } })
                   }
                 >
                   <View style={styles.actionItem}>

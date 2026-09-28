@@ -29,7 +29,7 @@ const getAuthToken = (): string | null => {
 };
 
 // Helper function to make authenticated API calls
-const authenticatedFetch = async (url: string, options: RequestInit = {}, canRefresh = true): Promise<any> => {
+const authenticatedFetch = async (url: string, options: RequestInit = {}, canRefresh = true): Promise<unknown> => {
   const token = getAuthToken();
   const headers = {
     'Content-Type': 'application/json',
@@ -107,7 +107,8 @@ export const api = {
   },
 
   async getCurrentUser(): Promise<User> {
-    return authenticatedFetch('/auth/me');
+    const response = await authenticatedFetch('/auth/me');
+    return response as User;
   },
 
   async refreshToken(refreshToken: string): Promise<AuthTokens> {
@@ -127,7 +128,7 @@ export const api = {
   },
 
   // Post endpoints
-  async getPosts(params?: { page?: number; limit?: number; feed?: 'latest' | 'following' }): Promise<any> {
+  async getPosts(params?: { page?: number; limit?: number; feed?: 'latest' | 'following' }): Promise<unknown> {
     const queryParams = new URLSearchParams();
     if (params?.page) queryParams.append('page', params.page.toString());
     if (params?.limit) queryParams.append('limit', params.limit.toString());
@@ -136,18 +137,18 @@ export const api = {
     return authenticatedFetch(`/posts?${queryParams.toString()}`);
   },
 
-  async getPost(id: string): Promise<any> {
+  async getPost(id: string): Promise<unknown> {
     return authenticatedFetch(`/posts/${id}`);
   },
 
-  async createPost(data: { content: string; images?: string[] }): Promise<any> {
+  async createPost(data: { content: string; images?: string[] }): Promise<unknown> {
     return authenticatedFetch('/posts', {
       method: 'POST',
       body: JSON.stringify(data),
     });
   },
 
-  async updatePost(id: string, data: { content?: string; images?: string[] }): Promise<any> {
+  async updatePost(id: string, data: { content?: string; images?: string[] }): Promise<unknown> {
     return authenticatedFetch(`/posts/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
@@ -155,10 +156,10 @@ export const api = {
   },
 
   async deletePost(id: string): Promise<void> {
-    return authenticatedFetch(`/posts/${id}`, { method: 'DELETE' });
+    await authenticatedFetch(`/posts/${id}`, { method: 'DELETE' });
   },
 
-  async getUserPosts(userId: string, params?: { page?: number; limit?: number }): Promise<any> {
+  async getUserPosts(userId: string, params?: { page?: number; limit?: number }): Promise<unknown> {
     const queryParams = new URLSearchParams();
     if (params?.page) queryParams.append('page', params.page.toString());
     if (params?.limit) queryParams.append('limit', params.limit.toString());
@@ -167,7 +168,7 @@ export const api = {
   },
 
   // Comment endpoints
-  async getPostComments(postId: string, params?: { page?: number; limit?: number; parentId?: string }): Promise<any> {
+  async getPostComments(postId: string, params?: { page?: number; limit?: number; parentId?: string }): Promise<unknown> {
     const queryParams = new URLSearchParams();
     if (params?.page) queryParams.append('page', params.page.toString());
     if (params?.limit) queryParams.append('limit', params.limit.toString());
@@ -176,7 +177,7 @@ export const api = {
     return authenticatedFetch(`/posts/${postId}/comments?${queryParams.toString()}`);
   },
 
-  async createComment(data: { postId: string; content: string; parentId?: string }): Promise<any> {
+  async createComment(data: { postId: string; content: string; parentId?: string }): Promise<unknown> {
     return authenticatedFetch('/comments', {
       method: 'POST',
       body: JSON.stringify(data),
@@ -184,19 +185,19 @@ export const api = {
   },
 
   async deleteComment(id: string): Promise<void> {
-    return authenticatedFetch(`/comments/${id}`, { method: 'DELETE' });
+    await authenticatedFetch(`/comments/${id}`, { method: 'DELETE' });
   },
 
   // Like endpoints
-  async togglePostLike(postId: string): Promise<any> {
+  async togglePostLike(postId: string): Promise<unknown> {
     return authenticatedFetch(`/likes/post/${postId}`, { method: 'POST' });
   },
 
-  async toggleCommentLike(commentId: string): Promise<any> {
+  async toggleCommentLike(commentId: string): Promise<unknown> {
     return authenticatedFetch(`/likes/comment/${commentId}`, { method: 'POST' });
   },
 
-  async getUserLikes(): Promise<any> {
+  async getUserLikes(): Promise<unknown> {
     return authenticatedFetch('/likes/user');
   },
 
@@ -205,31 +206,31 @@ export const api = {
     if (params?.page) queryParams.append('page', params.page.toString());
     if (params?.limit) queryParams.append('limit', params.limit.toString());
     const response = await authenticatedFetch(`/notifications?${queryParams.toString()}`);
-    return response.data;
+    return response as NotificationsResponse;
   },
 
   async markNotificationRead(id: string): Promise<{ updated: boolean }> {
     const response = await authenticatedFetch(`/notifications/${id}/read`, { method: 'PATCH' });
-    return response.data;
+    return response as { updated: boolean };
   },
 
   async markAllNotificationsRead(): Promise<{ updatedCount: number }> {
     const response = await authenticatedFetch('/notifications/read-all', { method: 'POST' });
-    return response.data;
+    return response as { updatedCount: number };
   },
 
   // User endpoints
   async getUser(id: string): Promise<User> {
     const response = await authenticatedFetch(`/users/${id}`);
-    return response.data;
+    return response as User;
   },
 
-  async searchUsers(query: string, params?: { page?: number; limit?: number }): Promise<any> {
+  async searchUsers(query: string, params?: { page?: number; limit?: number }): Promise<unknown> {
     const queryParams = new URLSearchParams({ q: query });
     if (params?.page) queryParams.append('page', params.page.toString());
     if (params?.limit) queryParams.append('limit', params.limit.toString());
     const response = await authenticatedFetch(`/users/search?${queryParams.toString()}`);
-    return response.data;
+    return response;
   },
 
   async search(query: string, params?: { page?: number; postsPage?: number; commentsPage?: number; limit?: number }): Promise<SearchResults> {
@@ -239,17 +240,17 @@ export const api = {
     if (params?.commentsPage) queryParams.append('commentsPage', params.commentsPage.toString());
     if (params?.limit) queryParams.append('limit', params.limit.toString());
     const response = await authenticatedFetch(`/search?${queryParams.toString()}`);
-    return response.data;
+    return response as SearchResults;
   },
 
   async followUser(id: string): Promise<{ following: boolean; userId: string }> {
     const response = await authenticatedFetch(`/users/${id}/follow`, { method: 'POST' });
-    return response.data;
+    return response as { following: boolean; userId: string };
   },
 
   async unfollowUser(id: string): Promise<{ following: boolean; userId: string }> {
     const response = await authenticatedFetch(`/users/${id}/follow`, { method: 'DELETE' });
-    return response.data;
+    return response as { following: boolean; userId: string };
   },
 
   async updateUser(id: string, data: { displayName?: string; bio?: string; profileImage?: string; coverImage?: string }): Promise<User> {
@@ -257,10 +258,10 @@ export const api = {
       method: 'PUT',
       body: JSON.stringify(data),
     });
-    return response.data;
+    return response as User;
   },
 
-  async getAllUsers(params?: { page?: number; limit?: number; search?: string }): Promise<any> {
+  async getAllUsers(params?: { page?: number; limit?: number; search?: string }): Promise<unknown> {
     const queryParams = new URLSearchParams();
     if (params?.page) queryParams.append('page', params.page.toString());
     if (params?.limit) queryParams.append('limit', params.limit.toString());
@@ -270,19 +271,19 @@ export const api = {
   },
 
   async banUser(id: string): Promise<void> {
-    return authenticatedFetch(`/users/${id}/ban`, { method: 'PATCH' });
+    await authenticatedFetch(`/users/${id}/ban`, { method: 'PATCH' });
   },
 
   async unbanUser(id: string): Promise<void> {
-    return authenticatedFetch(`/users/${id}/ban`, { method: 'PATCH' });
+    await authenticatedFetch(`/users/${id}/ban`, { method: 'PATCH' });
   },
 
   // Admin endpoints
-  async getAdminStats(): Promise<any> {
+  async getAdminStats(): Promise<unknown> {
     return authenticatedFetch('/admin/stats');
   },
 
-  async getAdminUsers(params?: { page?: number; limit?: number; search?: string }): Promise<any> {
+  async getAdminUsers(params?: { page?: number; limit?: number; search?: string }): Promise<unknown> {
     const queryParams = new URLSearchParams();
     if (params?.page) queryParams.append('page', params.page.toString());
     if (params?.limit) queryParams.append('limit', params.limit.toString());
@@ -291,7 +292,7 @@ export const api = {
     return authenticatedFetch(`/admin/users?${queryParams.toString()}`);
   },
 
-  async getAdminPosts(params?: { page?: number; limit?: number; userId?: string }): Promise<any> {
+  async getAdminPosts(params?: { page?: number; limit?: number; userId?: string }): Promise<unknown> {
     const queryParams = new URLSearchParams();
     if (params?.page) queryParams.append('page', params.page.toString());
     if (params?.limit) queryParams.append('limit', params.limit.toString());
@@ -300,7 +301,7 @@ export const api = {
     return authenticatedFetch(`/admin/posts?${queryParams.toString()}`);
   },
 
-  async getAdminComments(params?: { page?: number; limit?: number; userId?: string }): Promise<any> {
+  async getAdminComments(params?: { page?: number; limit?: number; userId?: string }): Promise<unknown> {
     const queryParams = new URLSearchParams();
     if (params?.page) queryParams.append('page', params.page.toString());
     if (params?.limit) queryParams.append('limit', params.limit.toString());

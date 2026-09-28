@@ -78,6 +78,7 @@ export interface AuthTokens {
 export interface LoginCredentials {
   email: string;
   password: string;
+  username?: string;
 }
 
 export interface RegisterCredentials {
@@ -85,6 +86,7 @@ export interface RegisterCredentials {
   username: string;
   password: string;
   confirmPassword: string;
+  displayName?: string;
 }
 
 export interface AuthResponse {
@@ -106,7 +108,7 @@ export interface ApiError {
   error: {
     message: string;
     code: string;
-    details?: any;
+    details?: unknown;
   };
 }
 

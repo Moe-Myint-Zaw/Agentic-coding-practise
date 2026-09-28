@@ -3,6 +3,30 @@ import { ApiError } from '../middleware/error.middleware';
 import { createNotification } from './notification.service';
 import { broadcastContentUpdate } from '../realtime/websocket';
 
+interface CommentWithIncludes {
+  id: string;
+  content: string;
+  postId: string;
+  authorId: string;
+  parentId: string | null;
+  isDeleted: boolean;
+  deletedAt: Date | null;
+  deletedBy: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  author: {
+    id: string;
+    username: string;
+    displayName: string | null;
+    profileImage: string | null;
+  };
+  likes: Array<{ userId: string }>;
+  _count?: {
+    likes: number;
+    replies: number;
+  };
+}
+
 export const getCommentsByPost = async (postId: string, page = 1, limit = 10, parentId: string | null = null) => {
   const skip = (page - 1) * limit;
   const where = {
@@ -91,7 +115,7 @@ export const deleteComment = async (id: string, userId: string, userRole: 'USER'
   return { deleted: true };
 };
 
-const serializeComment = (comment: any) => ({
+const serializeComment = (comment: CommentWithIncludes) => ({
   id: comment.id,
   content: comment.isDeleted ? '' : comment.content,
   postId: comment.postId,

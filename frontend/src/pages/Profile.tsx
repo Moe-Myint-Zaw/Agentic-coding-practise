@@ -8,6 +8,7 @@ import { useUserPosts } from '../hooks/usePosts';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader } from '../components/ui/card';
 import { Heart, MessageCircle, Share2, Edit, Calendar, UserPlus, UserMinus } from 'lucide-react';
+import type { Post, Like } from '../types';
 
 export const Profile: React.FC = () => {
   const { t } = useTranslation();
@@ -69,7 +70,7 @@ export const Profile: React.FC = () => {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['user-posts', profileId] }),
   });
 
-  const handleShare = async (post: any) => {
+  const handleShare = async (post: Post) => {
     const shareData = {
       title: user?.displayName || user?.username || t('nav.profile'),
       text: post.content,
@@ -94,7 +95,7 @@ export const Profile: React.FC = () => {
     return <div className="text-center py-8 text-destructive">{t('errors.loadFailed')}</div>;
   }
 
-  const posts = postsData?.data?.items || [];
+  const posts = (postsData as any)?.data?.items || [];
   const profileLetter = user.displayName?.[0] || user.username?.[0] || '?';
   const displayedProfileImage = profileImage || user.profileImage || '';
   const displayedCoverImage = coverImage || user.coverImage || '';
@@ -214,7 +215,7 @@ export const Profile: React.FC = () => {
         </Card>
       ) : (
         <div className="space-y-4">
-          {posts.map((post: any) => (
+          {posts.map((post: Post) => (
             <Card key={post.id}>
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
@@ -256,9 +257,9 @@ export const Profile: React.FC = () => {
                     className="gap-2"
                     onClick={() => likeMutation.mutate(post.id)}
                     disabled={likeMutation.isPending}
-                    aria-label={t(post.likes?.some((like: any) => like.userId === currentUser?.id) ? 'post.unlikePost' : 'post.likePost')}
+                    aria-label={t(post.likes?.some((like: Like) => like.userId === currentUser?.id) ? 'post.unlikePost' : 'post.likePost')}
                   >
-                    <Heart className="h-4 w-4" fill={post.likes?.some((like: any) => like.userId === currentUser?.id) ? 'currentColor' : 'none'} />
+                    <Heart className="h-4 w-4" fill={post.likes?.some((like: Like) => like.userId === currentUser?.id) ? 'currentColor' : 'none'} />
                     {post._count?.likes || 0}
                   </Button>
                   <Link to={`/post/${post.id}`}>

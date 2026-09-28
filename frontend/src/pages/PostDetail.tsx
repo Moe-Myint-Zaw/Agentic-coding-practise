@@ -29,8 +29,8 @@ export const PostDetail: React.FC = () => {
   const deleteComment = useDeleteComment();
   const updatePost = useUpdatePost();
 
-  const post = postResponse?.data;
-  const comments = (commentsResponse?.data?.items || []).filter(
+  const post = (postResponse as any)?.data;
+  const comments = ((commentsResponse as any)?.data?.items || []).filter(
     (comment: Comment) => comment.postId === id
   );
 
@@ -264,8 +264,8 @@ const CommentThreadItem: React.FC<CommentThreadItemProps> = ({ comment, postId, 
     parentId: comment.id,
     enabled: repliesOpen,
   });
-  const replies = (replyResponse?.data?.items || []) as Comment[];
-  const replyPagination = replyResponse?.data?.pagination;
+  const replies = ((replyResponse as any)?.data?.items || []) as Comment[];
+  const replyPagination = (replyResponse as any)?.data?.pagination;
   const liked = comment.likes?.some((like) => like.userId === user?.id) ?? false;
 
   const submitReply = async () => {

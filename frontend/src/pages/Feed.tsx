@@ -9,6 +9,7 @@ import { Heart, MessageCircle, Share2, MoreHorizontal, Trash2, Pencil, ImagePlus
 import { Link } from 'react-router-dom';
 import { Navigate } from 'react-router-dom';
 import { api, resolveMediaUrl } from '../lib/api';
+import type { Post } from '../types';
 
 export const Feed: React.FC = () => {
   const { t } = useTranslation();
@@ -115,7 +116,7 @@ export const Feed: React.FC = () => {
     return <div className="text-center py-8 text-destructive">{t('errors.loadFailed')}</div>;
   }
 
-  const posts = postsData?.data?.items || [];
+  const posts = (postsData as any)?.data?.items || [];
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -193,7 +194,7 @@ export const Feed: React.FC = () => {
         </Card>
       ) : (
         <div className="space-y-4">
-          {posts.map((post: any) => (
+          {posts.map((post: Post) => (
             <Card key={post.id}>
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">

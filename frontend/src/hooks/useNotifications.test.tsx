@@ -29,7 +29,8 @@ class MockWebSocket {
 describe('useNotifications', () => {
   beforeEach(() => {
     MockWebSocket.instances = [];
-    vi.stubGlobal('WebSocket', MockWebSocket as any);
+    // @ts-expect-error - Mocking WebSocket for testing
+    globalThis.WebSocket = MockWebSocket;
     vi.spyOn(api, 'getNotifications').mockResolvedValue(mockNotifications);
   });
 

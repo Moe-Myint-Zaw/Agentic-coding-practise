@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../co
 import { Button } from '../components/ui/button';
 import { Users, MessageSquare, FileText, Activity } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
+import type { User } from '../types';
 
 export const Admin: React.FC = () => {
   const { t } = useTranslation();
@@ -41,7 +42,7 @@ export const Admin: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {statsLoading ? '...' : stats?.data?.totalUsers || 0}
+              {statsLoading ? '...' : (stats as any)?.data?.totalUsers || 0}
             </div>
           </CardContent>
         </Card>
@@ -55,7 +56,7 @@ export const Admin: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {statsLoading ? '...' : stats?.data?.totalPosts || 0}
+              {statsLoading ? '...' : (stats as any)?.data?.totalPosts || 0}
             </div>
           </CardContent>
         </Card>
@@ -69,7 +70,7 @@ export const Admin: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {statsLoading ? '...' : stats?.data?.totalComments || 0}
+              {statsLoading ? '...' : (stats as any)?.data?.totalComments || 0}
             </div>
           </CardContent>
         </Card>
@@ -83,7 +84,7 @@ export const Admin: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {statsLoading ? '...' : stats?.data?.activeUsers || 0}
+              {statsLoading ? '...' : (stats as any)?.data?.activeUsers || 0}
             </div>
           </CardContent>
         </Card>
@@ -99,7 +100,7 @@ export const Admin: React.FC = () => {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {usersData?.data?.items?.map((user: any) => (
+            {(usersData as any)?.data?.items?.map((user: User) => (
               <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
