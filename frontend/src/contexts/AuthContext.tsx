@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { API_URL } from '../lib/api';
 import type { User, AuthTokens, LoginCredentials, RegisterCredentials } from '../types';
 
 interface AuthContextType {
@@ -30,8 +31,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const login = async (credentials: LoginCredentials) => {
-    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1';
-
     const response = await fetch(`${API_URL}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -51,8 +50,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const register = async (credentials: RegisterCredentials) => {
-    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1';
-
     const response = await fetch(`${API_URL}/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

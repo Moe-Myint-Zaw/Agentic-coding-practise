@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { Bell, CheckCheck, Heart, MessageCircle, UserPlus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
@@ -11,7 +12,12 @@ const icons = { POST_LIKED: Heart, COMMENT_LIKED: Heart, COMMENT_CREATED: Messag
 export const Notifications: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { data, isLoading, isError, refetch, markRead, markAllRead } = useNotifications();
+  const [page, setPage] = useState(1);
+  const { data, isLoading, isFetching, isError, refetch, markRead, markAllRead, userId } = useNotifications(page);
+
+  useEffect(() => {
+    setPage(1);
+  }, [userId]);
 
   const describe = (notification: Notification) => {
     const actor = notification.actor.displayName || notification.actor.username;
@@ -48,6 +54,15 @@ export const Notifications: React.FC = () => {
               {!notification.readAt && <span className="mt-2 h-2 w-2 rounded-full bg-primary" aria-label={t('notifications.unread')} />}
             </button>;
           })}
+          {!isLoading && !isError && data && data.pagination.totalPages > 1 && <div className="flex items-center justify-between border-t p-4">
+            <Button variant="outline" size="sm" onClick={() => setPage((current) => Math.max(1, current - 1))} disabled={page <= 1 || isFetching}>
+              {t('notifications.previous')}
+            </Button>
+            <span className="text-sm text-muted-foreground">{t('notifications.page', { page: data.pagination.page, total: data.pagination.totalPages })}</span>
+            <Button variant="outline" size="sm" onClick={() => setPage((current) => Math.min(data.pagination.totalPages, current + 1))} disabled={page >= data.pagination.totalPages || isFetching}>
+              {t('notifications.next')}
+            </Button>
+          </div>}
         </CardContent>
       </Card>
     </section>

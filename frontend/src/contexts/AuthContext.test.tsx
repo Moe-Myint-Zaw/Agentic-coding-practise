@@ -179,7 +179,7 @@ describe('AuthContext', () => {
       });
 
       expect(globalThis.fetch).toHaveBeenCalledWith(
-        'http://localhost:3000/api/v1/auth/login',
+        'https://yaycha-api-production-51d9.up.railway.app/api/v1/auth/login',
         expect.objectContaining({
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

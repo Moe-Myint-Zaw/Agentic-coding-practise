@@ -60,8 +60,11 @@ const withReachableHost = (url: string): string => {
   }
 };
 
+const DEFAULT_API_URL = __DEV__
+  ? `http://${getDevHost()}:3000/api/v1`
+  : "https://yaycha-api-production-51d9.up.railway.app/api/v1";
 const API_URL = withReachableHost(
-  process.env.EXPO_PUBLIC_API_URL ?? `http://${getDevHost()}:3000/api/v1`,
+  process.env.EXPO_PUBLIC_API_URL ?? DEFAULT_API_URL,
 );
 export const API_ORIGIN = API_URL.replace(/\/api\/v1\/?$/, "");
 

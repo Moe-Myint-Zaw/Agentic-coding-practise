@@ -1,5 +1,6 @@
 import { render, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { StrictMode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useNotifications, notificationQueryKey } from './useNotifications';
 import { api } from '../lib/api';
@@ -7,6 +8,7 @@ import { api } from '../lib/api';
 vi.mock('../contexts/AuthContext', () => ({
   useAuth: () => ({
     tokens: { accessToken: 'test-token' },
+    user: { id: 'test-user' },
   }),
 }));
 
@@ -62,9 +64,25 @@ describe('useNotifications', () => {
 
     await waitFor(() => {
       expect(refetchSpy).toHaveBeenCalledWith(
-        expect.objectContaining({ queryKey: notificationQueryKey, exact: false, type: 'active' }),
+        expect.objectContaining({ queryKey: notificationQueryKey('test-user'), exact: false, type: 'active' }),
       );
     });
+  });
+
+  it('loads the requested page into a user-scoped query', async () => {
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const TestComponent = () => {
+      useNotifications(2);
+      return null;
+    };
+
+    render(<QueryClientProvider client={queryClient}><TestComponent /></QueryClientProvider>);
+
+    await waitFor(() => expect(api.getNotifications).toHaveBeenCalledWith({ page: 2, limit: 50 }));
+    expect(queryClient.getQueryCache().getAll().map(({ queryKey }) => queryKey)).toContainEqual([
+      ...notificationQueryKey('test-user'),
+      2,
+    ]);
   });
 
   it('invalidates shared content queries when a content update arrives', async () => {
@@ -75,7 +93,8 @@ describe('useNotifications', () => {
       return null;
     };
 
-    render(<QueryClientProvider client={queryClient}><TestComponent /></QueryClientProvider>);
+    render(<StrictMode><QueryClientProvider client={queryClient}><TestComponent /></QueryClientProvider></StrictMode>);
+    await waitFor(() => expect(MockWebSocket.instances).toHaveLength(1));
     const socket = MockWebSocket.instances[0];
     socket.onmessage?.({ data: JSON.stringify({ type: 'content.updated', data: { resource: 'comment', action: 'created', postId: 'post-1', commentId: 'comment-1', actorId: 'user-2' } }) } as MessageEvent);
 

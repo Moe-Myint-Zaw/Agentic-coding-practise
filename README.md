@@ -56,7 +56,7 @@ cd frontend
 npm run dev
 ```
 
-The web client defaults to `http://localhost:3000/api/v1`; override it with `VITE_API_URL` when needed.
+The web client uses the Railway API by default in development and production. Set `VITE_API_URL=http://localhost:3000/api/v1` to use a local backend, or provide another API URL as needed.
 
 Start the mobile client in a third terminal:
 

@@ -11,7 +11,7 @@ export const queryClient = new QueryClient({
   },
 });
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1';
+export const API_URL = import.meta.env.VITE_API_URL || 'https://yaycha-api-production-51d9.up.railway.app/api/v1';
 export const API_ORIGIN = API_URL.replace(/\/api\/v1\/?$/, '');
 
 export const resolveMediaUrl = (url: string): string => (
@@ -206,7 +206,7 @@ export const api = {
     if (params?.page) queryParams.append('page', params.page.toString());
     if (params?.limit) queryParams.append('limit', params.limit.toString());
     const response = await authenticatedFetch(`/notifications?${queryParams.toString()}`);
-    return response as NotificationsResponse;
+    return (response as { data: NotificationsResponse }).data;
   },
 
   async markNotificationRead(id: string): Promise<{ updated: boolean }> {
@@ -222,7 +222,7 @@ export const api = {
   // User endpoints
   async getUser(id: string): Promise<User> {
     const response = await authenticatedFetch(`/users/${id}`);
-    return response as User;
+    return (response as { data: User }).data;
   },
 
   async searchUsers(query: string, params?: { page?: number; limit?: number }): Promise<unknown> {
@@ -240,7 +240,7 @@ export const api = {
     if (params?.commentsPage) queryParams.append('commentsPage', params.commentsPage.toString());
     if (params?.limit) queryParams.append('limit', params.limit.toString());
     const response = await authenticatedFetch(`/search?${queryParams.toString()}`);
-    return response as SearchResults;
+    return (response as { data: SearchResults }).data;
   },
 
   async followUser(id: string): Promise<{ following: boolean; userId: string }> {

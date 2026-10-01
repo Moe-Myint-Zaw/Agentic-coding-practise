@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "mobile",
+    "name": "Yaycha",
     "slug": "mobile",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -12,8 +12,10 @@
       "infoPlist": {
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": true
-        }
-      }
+        },
+        "ITSAppUsesNonExemptEncryption": false
+      },
+      "bundleIdentifier": "com.moemyintzaw2026.mobile"
     },
     "android": {
       "usesCleartextTraffic": true,
@@ -24,7 +26,8 @@
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.moemyintzaw2026.mobile"
     },
     "web": {
       "bundler": "metro",
@@ -47,6 +50,12 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "fed6b651-009e-408c-b6da-4f2e034310a3"
+      }
     }
   }
 }

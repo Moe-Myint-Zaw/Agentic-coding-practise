@@ -74,8 +74,8 @@ export default function ProfileScreen() {
     onSuccess: () => client.invalidateQueries({ queryKey: ["user-posts", profileId] }),
   });
 
-  const viewedUser = profile.data ?? user;
   const isOwnProfile = profileId === user?.id;
+  const viewedUser = isOwnProfile ? profile.data ?? user : profile.data;
 
   const pickPhoto = async (type: "profile" | "cover") => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -110,7 +110,28 @@ export default function ProfileScreen() {
     }
   };
 
-  if (!user || !viewedUser) return null;
+  if (!user) return null;
+  if (!viewedUser) {
+    return (
+      <ScreenFrame edges={isStandaloneProfile ? ["left", "right", "bottom"] : ["top", "left", "right"]}>
+        <View style={styles.profileStatus}>
+          {profile.isError ? (
+            <>
+              <Text style={styles.statusText}>{t("networkError")}</Text>
+              <Pressable accessibilityRole="button" onPress={() => void profile.refetch()}>
+                <Text style={styles.retryText}>{t("retry")}</Text>
+              </Pressable>
+            </>
+          ) : (
+            <>
+              <ActivityIndicator color={colors.tint} />
+              <Text style={styles.statusText}>{t("loading")}</Text>
+            </>
+          )}
+        </View>
+      </ScreenFrame>
+    );
+  }
 
   const displayedProfileImage = isOwnProfile
     ? profileImage || viewedUser.profileImage || ""
@@ -331,6 +352,9 @@ export default function ProfileScreen() {
 const createStyles = (colors: ReturnType<typeof useTheme>["colors"]) =>
   StyleSheet.create({
     page: { backgroundColor: colors.background, flex: 1 },
+    profileStatus: { alignItems: "center", flex: 1, gap: 12, justifyContent: "center", padding: 24 },
+    statusText: { color: colors.mutedText, textAlign: "center" },
+    retryText: { color: colors.tint, fontWeight: "700" },
     hero: {
       backgroundColor: colors.accentSoft,
       paddingHorizontal: 20,
