@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react';
 import { Profile } from './Profile';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
-import { api } from '../lib/api';
+import { api, resolveMediaUrl } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 
 vi.mock('../lib/api');
@@ -62,5 +62,36 @@ describe('Profile', () => {
     render(<Profile />, { wrapper });
 
     expect(screen.getByText(/loading/i)).toBeTruthy();
+  });
+
+  it('shows the searched user photos instead of the logged-in user photos', async () => {
+    const auth = mockedUseAuth();
+    mockedUseAuth.mockReturnValue({
+      ...auth,
+      user: {
+        ...auth.user!,
+        profileImage: '/uploads/current-profile.jpg',
+        coverImage: '/uploads/current-cover.jpg',
+      },
+    });
+    vi.mocked(resolveMediaUrl).mockImplementation((url) => url);
+    mockedApi.getUser.mockResolvedValue({
+      id: 'target-user',
+      email: 'target@example.com',
+      username: 'targetuser',
+      displayName: 'Target User',
+      profileImage: '/uploads/target-profile.jpg',
+      coverImage: '/uploads/target-cover.jpg',
+      role: 'USER',
+      isBanned: false,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
+
+    render(<Profile />, { wrapper });
+
+    await screen.findByAltText('Target User');
+    expect(screen.getByAltText('Target User').getAttribute('src')).toBe('/uploads/target-profile.jpg');
+    expect(document.querySelector('img[alt=""]')?.getAttribute('src')).toBe('/uploads/target-cover.jpg');
   });
 });

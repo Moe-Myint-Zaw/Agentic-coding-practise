@@ -97,8 +97,8 @@ export const Profile: React.FC = () => {
 
   const posts = (postsData as any)?.data?.items || [];
   const profileLetter = user.displayName?.[0] || user.username?.[0] || '?';
-  const displayedProfileImage = profileImage || user.profileImage || '';
-  const displayedCoverImage = coverImage || user.coverImage || '';
+  const displayedProfileImage = (isOwnProfile ? profileImage : '') || user.profileImage || '';
+  const displayedCoverImage = (isOwnProfile ? coverImage : '') || user.coverImage || '';
 
   return (
     <div className="max-w-2xl mx-auto">

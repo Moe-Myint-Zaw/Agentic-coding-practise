@@ -6,7 +6,7 @@ import { Link } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Input } from '../components/ui/input';
-import { api } from '../lib/api';
+import { api, resolveMediaUrl } from '../lib/api';
 
 export const SearchPage: React.FC = () => {
   const { t } = useTranslation();
@@ -66,7 +66,7 @@ export const SearchPage: React.FC = () => {
                 <Link key={user.id} to={`/profile/${user.id}`}>
                   <Card className="h-full transition-colors hover:border-primary/50">
                     <CardHeader className="flex-row items-center gap-4 space-y-0 pb-3">
-                      {user.profileImage ? <img src={user.profileImage} alt="" className="h-12 w-12 rounded-full object-cover" /> : (
+                      {user.profileImage ? <img src={resolveMediaUrl(user.profileImage)} alt="" className="h-12 w-12 rounded-full object-cover" /> : (
                         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-secondary"><UserRound className="h-5 w-5 text-muted-foreground" /></div>
                       )}
                       <div className="min-w-0">
